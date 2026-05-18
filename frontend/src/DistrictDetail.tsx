@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import type { Citation, District, EmailDraft, PipelineResult, Signal } from './types'
+import { useEffect, useMemo, useState } from 'react'
+import type { Citation, District, PipelineResult, Signal } from './types'
 
 type Props = {
   districtId: string
@@ -7,16 +7,8 @@ type Props = {
   onChanged: () => void
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: '#64748b',
-  enriching: '#0ea5e9',
-  enriched: '#10b981',
-  approved: '#22c55e',
-  rejected: '#ef4444',
-  edited: '#f59e0b',
-  non_fit: '#94a3b8',
-  duplicate: '#a855f7',
-  draft: '#0ea5e9',
+function statusLabel(s: string): string {
+  return s.replace(/_/g, ' ')
 }
 
 export default function DistrictDetail({ districtId, onClose, onChanged }: Props) {
@@ -45,6 +37,14 @@ export default function DistrictDetail({ districtId, onClose, onChanged }: Props
     load()
   }, [districtId])
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
   async function runPipeline() {
     setRunning(true)
     setActionMsg(null)
@@ -63,31 +63,39 @@ export default function DistrictDetail({ districtId, onClose, onChanged }: Props
 
   async function postDraftAction(action: 'approve' | 'edit' | 'reject', reason?: string) {
     if (!district?.email_draft) return
-    const draftId = (district.email_draft as any).id
+    const draftId = district.email_draft.id
     const body: any = { action }
     if (action === 'edit') {
       body.edited_subject = editedSubject
       body.edited_body = editedBody
     }
-    if (action === 'reject') {
-      body.rejection_reason = reason ?? 'no reason given'
-    }
+    if (action === 'reject') body.rejection_reason = reason ?? 'no reason given'
+
     const res = await fetch(`/api/email-drafts/${draftId}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
     })
     const out = await res.json()
-    setActionMsg(`Draft ${out.status}, district now ${out.district_status}`)
+    setActionMsg(`Draft ${out.status} — file now ${out.district_status}.`)
     await load()
     onChanged()
   }
+
+  // Indexed citations per panel — for footnote-style superscript chips.
+  const enrichmentCites = district?.enrichment?.citations ?? []
+  const draftCites = district?.email_draft?.citations ?? []
+
+  const enrichmentNoteIndex = useMemo(() => makeIndex(enrichmentCites), [enrichmentCites])
+  const draftNoteIndex = useMemo(() => makeIndex(draftCites), [draftCites])
 
   if (!district) {
     return (
       <div className="modal-bg" onClick={onClose}>
         <div className="modal" onClick={(e) => e.stopPropagation()}>
-          <p style={{ padding: 24 }}>Loading…</p>
+          <div style={{ padding: 48, fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase' }}>
+            Retrieving file…
+          </div>
         </div>
       </div>
     )
@@ -102,212 +110,308 @@ export default function DistrictDetail({ districtId, onClose, onChanged }: Props
       <div className="modal" onClick={(ev) => ev.stopPropagation()}>
         <header className="modal-hdr">
           <div>
-            <div className="card-id">{district.district_id}</div>
-            <h2 style={{ margin: '4px 0 0' }}>{district.name}</h2>
-            <p className="sub" style={{ margin: '4px 0 0' }}>
-              {district.state ?? '—'} · enrollment {district.enrollment?.toLocaleString() ?? '—'}
+            <div className="modal-eyebrow">
+              <span>File №&nbsp;{district.district_id}</span>
+              <span className={`stamp lg stamp-${district.status}`}>{statusLabel(district.status)}</span>
+            </div>
+            <h2 className="modal-title">{district.name}</h2>
+            <p className="modal-sub">
+              {district.state ?? '—'}
+              {' · '}
+              Enrollment {district.enrollment?.toLocaleString() ?? '—'}
+              {district.website ? ` · ${district.website}` : ''}
             </p>
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span className="badge" style={{ background: STATUS_COLORS[district.status] ?? '#64748b' }}>
-              {district.status}
-            </span>
+          <div className="modal-actions">
             {canRunPipeline && (
-              <button onClick={runPipeline} disabled={running}>
-                {running ? 'Running…' : (e ? 'Re-run' : 'Run pipeline')}
+              <button
+                onClick={runPipeline}
+                disabled={running}
+                className={`primary ${running ? 'running' : ''}`}
+              >
+                {running ? 'Processing' : e ? 'Re-brief' : 'Brief district'}
               </button>
             )}
             <button onClick={onClose} className="ghost">Close</button>
           </div>
         </header>
 
-        {actionMsg && <div className="msg">{actionMsg}</div>}
-        {pipelineLog && (
-          <div className="pipeline-log">
-            {pipelineLog.steps.map((s, i) => <div key={i}>✓ {s}</div>)}
-            {pipelineLog.errors.map((s, i) => <div key={`e${i}`} className="err-line">✗ {s}</div>)}
-          </div>
-        )}
+        <div className="modal-body">
+          {actionMsg && <div className="msg">{actionMsg}</div>}
+          {pipelineLog && (
+            <div className="pipeline-log">
+              {pipelineLog.steps.map((s, i) => <div key={i}>› {s}</div>)}
+              {pipelineLog.errors.map((s, i) => <div key={`e${i}`} className="err-line">⚠ {s}</div>)}
+            </div>
+          )}
 
-        {district.intake_notes && (
+          {district.intake_notes && (
+            <section className="panel">
+              <h3>Intake</h3>
+              <p style={{
+                fontFamily: 'var(--body)',
+                fontStyle: 'italic',
+                fontSize: 17,
+                lineHeight: 1.55,
+                color: 'var(--text)',
+                margin: 0,
+              }}>
+                "{district.intake_notes}"
+              </p>
+            </section>
+          )}
+
           <section className="panel">
-            <h3>Intake</h3>
-            <p>{district.intake_notes}</p>
-          </section>
-        )}
-
-        <section className="panel">
-          <h3>Resolved signals ({signals.length})</h3>
-          {signals.length === 0 && <p className="muted">No signals resolved to this district.</p>}
-          {signals.map((s) => (
-            <article key={s.signal_id} className="signal">
-              <header>
-                <span className="card-id">{s.signal_id}</span>
-                <span className="pill">{s.type}</span>
-                <span className="muted">{s.date}</span>
-                <span className="muted">
-                  {s.match_strategy} · {s.match_confidence != null ? `${(s.match_confidence * 100).toFixed(0)}%` : '—'}
-                </span>
-              </header>
-              <pre>{summarizeSignal(s.payload)}</pre>
-            </article>
-          ))}
-        </section>
-
-        {e && (
-          <section className="panel">
-            <h3>
-              Enrichment
-              {e.fit_score != null && <span className="fit">fit {e.fit_score}</span>}
-            </h3>
-            <Field label="Region" value={e.region_context} cites={e.citations} field="region_context" />
-            <Field label="SPED footprint" value={describeSped(e)} cites={e.citations} field="iep_pct" />
-            <Field label="Decision-maker" value={describeDecisionMaker(e)} cites={e.citations} field="sped_director_name" />
-            <Field label="Recent initiatives" value={e.recent_initiatives} cites={e.citations} field="recent_initiatives" />
-            <Field label="Pain points" value={e.pain_points} cites={e.citations} field="pain_points" />
-            <Field label="Fit reasoning" value={e.fit_reasoning} cites={e.citations} field="fit_reasoning" />
-            {e.fit_breakdown && (
-              <div className="fit-grid">
-                {Object.entries(e.fit_breakdown).map(([k, v]) => (
-                  <div key={k}>
-                    <dt>{k.replace(/_/g, ' ')}</dt>
-                    <dd>{v}</dd>
-                  </div>
-                ))}
-              </div>
+            <h3>Signals on file · {signals.length}</h3>
+            {signals.length === 0 && (
+              <p style={{ fontStyle: 'italic', color: 'var(--muted)', margin: 0 }}>
+                No intent signals have been resolved to this district.
+              </p>
             )}
-          </section>
-        )}
-
-        {draft && (
-          <section className="panel">
-            <h3>
-              Email draft
-              <span className="badge sm" style={{ background: STATUS_COLORS[draft.status] ?? '#64748b' }}>
-                {draft.status}
-              </span>
-            </h3>
-            <p className="muted small">
-              To: {draft.recipient_name ?? '—'} ({draft.recipient_title ?? 'no title'})
-              {draft.recipient_email ? ` · ${draft.recipient_email}` : ''}
-            </p>
-            {draft.hook_summary && <p className="muted small"><strong>Hook:</strong> {draft.hook_summary}</p>}
-
-            <label className="lbl">Subject</label>
-            <input
-              className="inp"
-              value={editedSubject}
-              onChange={(ev) => setEditedSubject(ev.target.value)}
-              disabled={['approved', 'rejected'].includes(draft.status)}
-            />
-
-            <label className="lbl">Body</label>
-            <textarea
-              className="inp"
-              rows={12}
-              value={editedBody}
-              onChange={(ev) => setEditedBody(ev.target.value)}
-              disabled={['approved', 'rejected'].includes(draft.status)}
-            />
-
-            <CitationList cites={draft.citations} />
-
-            {!['approved', 'rejected'].includes(draft.status) && (
-              <div className="actions">
-                <button onClick={() => postDraftAction('approve')}>Approve</button>
-                <button onClick={() => postDraftAction('edit')} className="secondary">Save edits</button>
-                <button
-                  onClick={() => {
-                    const reason = prompt('Reject reason?') || 'no reason given'
-                    postDraftAction('reject', reason)
-                  }}
-                  className="danger"
-                >
-                  Reject
-                </button>
+            {signals.map((s) => (
+              <div key={s.signal_id} className="signal">
+                <div className="signal-l">
+                  <span className="sid">{s.signal_id}</span>
+                  <span className="sdate">{s.date ?? '—'}</span>
+                </div>
+                <div className="signal-c">
+                  <span className="type">{s.type.replace(/_/g, ' ')}</span>
+                  <br />
+                  {summarizeSignal(s.payload)}
+                </div>
+                <div className="signal-r">
+                  {s.match_strategy?.replace(/_/g, ' ') ?? '—'}
+                  <span className="conf">
+                    {s.match_confidence != null ? `${(s.match_confidence * 100).toFixed(0)}% conf` : ''}
+                  </span>
+                </div>
               </div>
-            )}
+            ))}
           </section>
-        )}
 
-        {!e && district.status === 'pending' && (
-          <section className="panel muted">
-            <p>Not enriched yet. Click "Run pipeline" to generate enrichment + email draft.</p>
-          </section>
-        )}
+          {e && (
+            <section className="panel">
+              <h3>Assessment</h3>
 
-        {district.non_fit_reason && (
-          <section className="panel">
-            <h3>Non-fit reason</h3>
-            <p>{district.non_fit_reason}</p>
-          </section>
-        )}
-        {district.duplicate_of_external_id && (
-          <section className="panel">
-            <h3>Duplicate</h3>
-            <p>This record duplicates {district.duplicate_of_external_id}. Consolidated lifecycle on the older row.</p>
-          </section>
-        )}
+              {e.fit_score != null && (
+                <div className="fit-plate">
+                  {e.fit_score}<small>/ 100 fit</small>
+                </div>
+              )}
+
+              <Field label="Region" value={e.region_context} cites={enrichmentNoteIndex.byField('region_context')} />
+              <Field label="SPED footprint" value={describeSped(e)} cites={enrichmentNoteIndex.byField('iep_pct').concat(enrichmentNoteIndex.byField('iep_count_estimate'), enrichmentNoteIndex.byField('sped_program_notes'))} />
+              <Field label="Decision-maker" value={describeDecisionMaker(e)} cites={enrichmentNoteIndex.byField('sped_director_name').concat(enrichmentNoteIndex.byField('sped_director_email'))} />
+              <Field label="Recent initiatives" value={e.recent_initiatives} cites={enrichmentNoteIndex.byField('recent_initiatives')} />
+              <Field label="Pain points" value={e.pain_points} cites={enrichmentNoteIndex.byField('pain_points')} />
+              <Field label="Reasoning" value={e.fit_reasoning} cites={enrichmentNoteIndex.byField('fit_reasoning')} />
+
+              {e.fit_breakdown && (
+                <dl className="fit-grid">
+                  {Object.entries(e.fit_breakdown).map(([k, v]) => (
+                    <div key={k}>
+                      <dt>{k.replace(/_/g, ' ')}</dt>
+                      <dd>{typeof v === 'number' ? v : '—'}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+
+              <CitationList title="Footnotes (assessment)" cites={enrichmentNoteIndex.list} />
+            </section>
+          )}
+
+          {draft && (
+            <section className="panel">
+              <h3>
+                Dispatch draft
+                <span className={`stamp stamp-${draft.status}`} style={{ marginLeft: 4 }}>{draft.status}</span>
+              </h3>
+
+              <div className="draft-meta">
+                <span><strong>To.</strong> {draft.recipient_name ?? '—'}</span>
+                {draft.recipient_title && <span>{draft.recipient_title}</span>}
+                {draft.recipient_email && <span>{draft.recipient_email}</span>}
+                {draft.hook_summary && (
+                  <span style={{ flexBasis: '100%', marginTop: 6 }}>
+                    <strong>Hook.</strong> <span style={{ fontFamily: 'var(--body)', fontStyle: 'italic', fontSize: 14, textTransform: 'none', letterSpacing: 0, color: 'var(--text-dim)' }}>{draft.hook_summary}</span>
+                  </span>
+                )}
+              </div>
+
+              <label className="lbl">Subject line</label>
+              <input
+                className="inp"
+                value={editedSubject}
+                onChange={(ev) => setEditedSubject(ev.target.value)}
+                disabled={['approved', 'rejected'].includes(draft.status)}
+              />
+
+              <label className="lbl">Body</label>
+              <DraftBody
+                value={editedBody}
+                onChange={setEditedBody}
+                disabled={['approved', 'rejected'].includes(draft.status)}
+              />
+
+              <CitationList title="Footnotes (dispatch)" cites={draftNoteIndex.list} />
+
+              {!['approved', 'rejected'].includes(draft.status) && (
+                <div className="actions">
+                  <button onClick={() => postDraftAction('edit')}>Save edits</button>
+                  <button
+                    onClick={() => {
+                      const reason = prompt('Reject reason?')
+                      if (reason !== null) postDraftAction('reject', reason || 'no reason given')
+                    }}
+                    className="danger"
+                  >
+                    Reject
+                  </button>
+                  <div className="spacer" />
+                  <button onClick={() => postDraftAction('approve')} className="primary">
+                    Approve & dispatch
+                  </button>
+                </div>
+              )}
+            </section>
+          )}
+
+          {!e && district.status === 'pending' && (
+            <section className="panel">
+              <p style={{ fontFamily: 'var(--body)', fontStyle: 'italic', color: 'var(--text-dim)', margin: 0 }}>
+                This dossier has not yet been briefed. Click <strong>Brief district</strong> above to generate
+                the assessment and a dispatch draft from the signals on file.
+              </p>
+            </section>
+          )}
+
+          {district.non_fit_reason && (
+            <section className="panel">
+              <h3>Filed as non-fit</h3>
+              <p style={{ fontFamily: 'var(--body)', fontSize: 15, color: 'var(--text-dim)', margin: 0 }}>
+                {district.non_fit_reason}
+              </p>
+            </section>
+          )}
+
+          {district.duplicate_of_external_id && (
+            <section className="panel">
+              <h3>Cross-reference</h3>
+              <p style={{ fontFamily: 'var(--body)', fontSize: 15, color: 'var(--text-dim)', margin: 0 }}>
+                This file duplicates {district.duplicate_of_external_id}; lifecycle consolidated to the older record.
+              </p>
+            </section>
+          )}
+        </div>
       </div>
     </div>
   )
 }
 
-function Field({ label, value, cites, field }: { label: string; value: string | null | undefined; cites: Citation[]; field: string }) {
+/* ─── Field row with footnote-style superscripts ─────────────── */
+
+function Field({ label, value, cites }: { label: string; value: string | null | undefined; cites: IndexedCitation[] }) {
   if (!value) return null
-  const matching = cites.filter((c) => c.field_name === field)
   return (
-    <div className="fld">
+    <dl className="fld">
       <dt>{label}</dt>
       <dd>
         {value}
-        {matching.map((c, i) => (
-          <CiteChip key={i} c={c} />
+        {cites.map((c) => (
+          <sup key={c.n} className="fn" title={titleFor(c)}>{c.n}</sup>
         ))}
       </dd>
-    </div>
+    </dl>
   )
 }
 
-function CiteChip({ c }: { c: Citation }) {
-  const label =
-    c.source_type === 'signal' ? c.source_signal_external_id ?? 'signal' :
-    c.source_type === 'intake_note' ? 'intake' :
-    c.source_type === 'inference' ? `inf${c.confidence != null ? ` ${(c.confidence * 100).toFixed(0)}%` : ''}` :
-    c.source_type
-  const title = c.source_quote ?? c.source_url ?? ''
-  return <span className={`chip chip-${c.source_type}`} title={title}>{label}</span>
+/* ─── Email body with editable textarea + drop cap preview ───── */
+
+function DraftBody({ value, onChange, disabled }: { value: string; onChange: (v: string) => void; disabled: boolean }) {
+  return (
+    <textarea
+      className="inp"
+      rows={12}
+      value={value}
+      onChange={(ev) => onChange(ev.target.value)}
+      disabled={disabled}
+    />
+  )
 }
 
-function CitationList({ cites }: { cites: Citation[] }) {
-  if (!cites?.length) return null
+/* ─── Citation list (numbered footnotes) ─────────────────────── */
+
+function CitationList({ title, cites }: { title: string; cites: IndexedCitation[] }) {
+  if (!cites.length) return null
   return (
     <details className="citations">
-      <summary>{cites.length} citation{cites.length === 1 ? '' : 's'}</summary>
-      <ul>
-        {cites.map((c, i) => (
-          <li key={i}>
-            <strong>{c.field_name}</strong> <span className={`chip chip-${c.source_type}`}>{c.source_type}</span>
-            {c.source_signal_external_id && <span> {c.source_signal_external_id}</span>}
-            {c.confidence != null && <span className="muted"> · conf {(c.confidence * 100).toFixed(0)}%</span>}
+      <summary>{title} · {cites.length}</summary>
+      <ol>
+        {cites.map((c) => (
+          <li key={c.n} id={`fn-${c.n}`}>
+            <strong>{c.field_name}</strong>
+            <span className={`src-type ${c.source_type}`}>{c.source_type}</span>
+            {c.source_signal_external_id && (
+              <span style={{ marginLeft: 8, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text-dim)' }}>
+                {c.source_signal_external_id}
+              </span>
+            )}
+            {c.confidence != null && (
+              <span style={{ marginLeft: 8, fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', color: 'var(--muted)' }}>
+                conf {(c.confidence * 100).toFixed(0)}%
+              </span>
+            )}
             {c.source_quote && <div className="quote">"{c.source_quote}"</div>}
+            {c.source_url && (
+              <div style={{ marginTop: 4, fontFamily: 'var(--mono)', fontSize: 11 }}>
+                <a href={c.source_url} target="_blank" rel="noreferrer" style={{ color: 'var(--amber)' }}>
+                  {c.source_url}
+                </a>
+              </div>
+            )}
           </li>
         ))}
-      </ul>
+      </ol>
     </details>
   )
 }
 
+/* ─── Helpers ──────────────────────────────────────────────── */
+
+type IndexedCitation = Citation & { n: number }
+
+function makeIndex(cites: Citation[]): { list: IndexedCitation[]; byField: (f: string) => IndexedCitation[] } {
+  const list: IndexedCitation[] = cites.map((c, i) => ({ ...c, n: i + 1 }))
+  return {
+    list,
+    byField: (f: string) => list.filter((c) => c.field_name === f),
+  }
+}
+
+function titleFor(c: Citation): string {
+  const bits: string[] = [c.source_type]
+  if (c.source_signal_external_id) bits.push(c.source_signal_external_id)
+  if (c.source_quote) bits.push(`"${c.source_quote}"`)
+  if (c.confidence != null) bits.push(`conf ${(c.confidence * 100).toFixed(0)}%`)
+  return bits.join(' — ')
+}
+
 function summarizeSignal(p: Record<string, unknown>): string {
-  const keys = Object.keys(p).filter((k) => k !== 'signal_id' && k !== 'type' && k !== 'date')
-  const lines = keys.map((k) => `${k}: ${typeof p[k] === 'string' ? p[k] : JSON.stringify(p[k])}`)
+  const skip = new Set(['signal_id', 'type', 'date'])
+  const lines: string[] = []
+  for (const [k, v] of Object.entries(p)) {
+    if (skip.has(k)) continue
+    const value = typeof v === 'string' ? v : JSON.stringify(v)
+    lines.push(`${k.replace(/_/g, ' ')}: ${value}`)
+  }
   return lines.join('\n')
 }
 
 function describeSped(e: any): string | null {
   const parts: string[] = []
   if (e.iep_pct != null) parts.push(`${e.iep_pct}% IEP`)
-  if (e.iep_count_estimate != null) parts.push(`~${e.iep_count_estimate.toLocaleString()} students on IEPs`)
+  if (e.iep_count_estimate != null) parts.push(`~${e.iep_count_estimate.toLocaleString()} students`)
   if (e.sped_program_notes) parts.push(e.sped_program_notes)
   return parts.length ? parts.join(' · ') : null
 }

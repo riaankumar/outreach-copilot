@@ -1,21 +1,29 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import DistrictDetail from './DistrictDetail'
 import type { District } from './types'
 import './App.css'
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: '#64748b',
-  enriching: '#0ea5e9',
-  enriched: '#10b981',
-  approved: '#22c55e',
-  rejected: '#ef4444',
-  non_fit: '#94a3b8',
-  duplicate: '#a855f7',
-}
+const FILE_NO = (() => {
+  // Deterministic-ish file number for the masthead based on the date.
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}-OPS`
+})()
+
+const DATE_LABEL = new Date().toLocaleDateString('en-US', {
+  weekday: 'long',
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric',
+})
 
 function fmtEnrollment(n: number | null | undefined): string {
   if (n == null) return '—'
+  if (n >= 1000) return `${(n / 1000).toFixed(n >= 10_000 ? 0 : 1)}k`
   return n.toLocaleString()
+}
+
+function statusLabel(s: string): string {
+  return s.replace(/_/g, ' ')
 }
 
 export default function App() {
@@ -42,69 +50,129 @@ export default function App() {
     refresh()
   }, [])
 
+  // Sort: actionable first (pending, enriched), then approved/edited, then non_fit/duplicate/rejected
+  const sorted = useMemo(() => {
+    const order: Record<string, number> = {
+      enriched: 0,
+      pending: 1,
+      enriching: 2,
+      edited: 3,
+      approved: 4,
+      duplicate: 5,
+      non_fit: 6,
+      rejected: 7,
+    }
+    return [...districts].sort((a, b) => (order[a.status] ?? 99) - (order[b.status] ?? 99))
+  }, [districts])
+
+  const totals = useMemo(() => {
+    const t = { pending: 0, enriched: 0, approved: 0, signals: 0 }
+    for (const d of districts) {
+      if (d.status === 'pending') t.pending++
+      if (d.status === 'enriched' || d.status === 'edited') t.enriched++
+      if (d.status === 'approved') t.approved++
+      t.signals += d.signal_count
+    }
+    return t
+  }, [districts])
+
   return (
     <div className="app">
-      <header className="hdr">
-        <div>
-          <h1>District Outreach Copilot</h1>
-          <p className="sub">Journify take-home · Riaan Kumar</p>
+      <header>
+        <div className="masthead">
+          <div className="masthead-l">
+            <strong>VOL. I</strong>
+            File № {FILE_NO}
+            <br />
+            Classification: Internal
+          </div>
+
+          <h1 className="masthead-title">
+            The <em>Bureau</em>
+          </h1>
+
+          <div className="masthead-r">
+            <strong>{DATE_LABEL}</strong>
+            Operator: R. Kumar
+            <br />
+            Dispatch — Journify
+          </div>
         </div>
-        <button onClick={refresh} disabled={loading}>
-          {loading ? 'Loading…' : 'Refresh'}
-        </button>
+
+        <p className="masthead-sub">
+          District Outreach Copilot · Grounded Intelligence for K-12 Sales
+        </p>
       </header>
 
-      {error && <div className="err">Error: {error}</div>}
+      <section className="toolbar">
+        <h2>
+          Active Dossiers
+          <span className="count">
+            {districts.length.toString().padStart(2, '0')} files
+            <span style={{ margin: '0 10px', opacity: 0.4 }}>·</span>
+            {totals.pending} pending
+            <span style={{ margin: '0 10px', opacity: 0.4 }}>·</span>
+            {totals.enriched} briefed
+            <span style={{ margin: '0 10px', opacity: 0.4 }}>·</span>
+            {totals.approved} dispatched
+            <span style={{ margin: '0 10px', opacity: 0.4 }}>·</span>
+            {totals.signals} signals matched
+          </span>
+        </h2>
+        <button onClick={refresh} disabled={loading}>
+          {loading ? 'Reloading…' : 'Refresh'}
+        </button>
+      </section>
+
+      {error && <div className="err">{error}</div>}
 
       {!error && districts.length === 0 && !loading && (
         <div className="empty">
-          <p>No districts yet.</p>
+          <p>The cabinet is empty.</p>
           <p className="hint">
-            Seed the DB by POSTing <code>target_districts.json</code> to <code>/api/districts/bulk</code>.
+            Seed it: <code>uv run python scripts/seed.py</code>
           </p>
         </div>
       )}
 
       <div className="grid">
-        {districts.map((d) => (
+        {sorted.map((d, i) => (
           <article
             key={d.district_id}
             className="card"
             onClick={() => setOpenId(d.district_id)}
-            style={{ cursor: 'pointer' }}
+            style={{ ['--i' as any]: i }}
           >
             <header className="card-hdr">
-              <div className="card-id">{d.district_id}</div>
-              <span
-                className="badge"
-                style={{ background: STATUS_COLORS[d.status] ?? '#64748b' }}
-              >
-                {d.status}
-              </span>
-            </header>
-            <h2 className="card-name">{d.name}</h2>
-            <dl className="card-meta">
               <div>
-                <dt>State</dt>
-                <dd>{d.state ?? '—'}</dd>
+                <div className="card-id">{d.district_id}</div>
+                <h2 className="card-name">{d.name}</h2>
+                <div className="card-state">
+                  {d.state ?? '—'} · {d.website ?? 'no website on file'}
+                </div>
               </div>
+              <span className={`stamp stamp-${d.status}`}>{statusLabel(d.status)}</span>
+            </header>
+
+            <dl className="card-meta">
               <div>
                 <dt>Enrollment</dt>
                 <dd>{fmtEnrollment(d.enrollment)}</dd>
               </div>
               <div>
                 <dt>Signals</dt>
-                <dd>{d.signal_count}</dd>
+                <dd>{d.signal_count.toString().padStart(2, '0')}</dd>
+              </div>
+              <div>
+                <dt>Fit</dt>
+                <dd>{d.enrichment?.fit_score ?? '—'}</dd>
               </div>
             </dl>
-            {d.website && (
-              <a className="site" href={`https://${d.website}`} target="_blank" rel="noreferrer">
-                {d.website} ↗
-              </a>
-            )}
+
             {d.intake_notes && <p className="notes">{d.intake_notes}</p>}
+
             {d.duplicate_of_external_id && (
-              <p className="flag">Duplicate of {d.duplicate_of_external_id}</p>
+              <p className="flag">Cross-ref: duplicate of {d.duplicate_of_external_id}</p>
             )}
             {d.non_fit_reason && <p className="flag">Non-fit: {d.non_fit_reason}</p>}
           </article>
@@ -112,7 +180,8 @@ export default function App() {
       </div>
 
       <footer className="ftr">
-        {districts.length} district{districts.length === 1 ? '' : 's'} · API :8000 · UI :5173
+        <span>Compiled {DATE_LABEL}</span>
+        <span>End of file</span>
       </footer>
 
       {openId && (
