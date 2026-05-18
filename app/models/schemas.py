@@ -94,12 +94,15 @@ class EnrichmentOut(BaseModel):
 
 
 class EmailDraftOut(BaseModel):
+    id: Optional[int] = None
     recipient_name: Optional[str] = None
     recipient_title: Optional[str] = None
     recipient_email: Optional[str] = None
     subject: str
     body: str
     hook_summary: Optional[str] = None
+    edited_subject: Optional[str] = None
+    edited_body: Optional[str] = None
     status: str
     citations: List[CitationOut] = []
     generated_at: Optional[datetime] = None
