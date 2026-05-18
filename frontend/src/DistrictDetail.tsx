@@ -11,6 +11,13 @@ function statusLabel(s: string): string {
   return s.replace(/_/g, ' ')
 }
 
+function fitClass(score: number | null | undefined): string {
+  if (score == null) return ''
+  if (score >= 75) return 'good'
+  if (score >= 50) return 'mid'
+  return ''
+}
+
 export default function DistrictDetail({ districtId, onClose, onChanged }: Props) {
   const [district, setDistrict] = useState<District | null>(null)
   const [signals, setSignals] = useState<Signal[]>([])
@@ -38,9 +45,7 @@ export default function DistrictDetail({ districtId, onClose, onChanged }: Props
   }, [districtId])
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
@@ -77,95 +82,93 @@ export default function DistrictDetail({ districtId, onClose, onChanged }: Props
       body: JSON.stringify(body),
     })
     const out = await res.json()
-    setActionMsg(`Draft ${out.status} — file now ${out.district_status}.`)
+    setActionMsg(`Draft ${out.status}. District is now ${out.district_status}.`)
     await load()
     onChanged()
   }
 
-  // Indexed citations per panel — for footnote-style superscript chips.
   const enrichmentCites = district?.enrichment?.citations ?? []
   const draftCites = district?.email_draft?.citations ?? []
-
-  const enrichmentNoteIndex = useMemo(() => makeIndex(enrichmentCites), [enrichmentCites])
-  const draftNoteIndex = useMemo(() => makeIndex(draftCites), [draftCites])
+  const enrichIdx = useMemo(() => makeIndex(enrichmentCites), [enrichmentCites])
+  const draftIdx = useMemo(() => makeIndex(draftCites), [draftCites])
 
   if (!district) {
     return (
-      <div className="modal-bg" onClick={onClose}>
-        <div className="modal" onClick={(e) => e.stopPropagation()}>
-          <div style={{ padding: 48, fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase' }}>
-            Retrieving file…
-          </div>
-        </div>
-      </div>
+      <>
+        <div className="panel-bg" onClick={onClose} />
+        <aside className="panel" role="dialog" aria-labelledby="panel-title">
+          <div style={{ padding: 32, color: 'var(--muted)', fontSize: 13 }}>Loading…</div>
+        </aside>
+      </>
     )
   }
 
   const canRunPipeline = !['duplicate', 'non_fit', 'rejected'].includes(district.status)
   const e = district.enrichment
   const draft = district.email_draft
+  const draftLocked = draft && ['approved', 'rejected'].includes(draft.status)
 
   return (
-    <div className="modal-bg" onClick={onClose}>
-      <div className="modal" onClick={(ev) => ev.stopPropagation()}>
-        <header className="modal-hdr">
-          <div>
-            <div className="modal-eyebrow">
-              <span>File №&nbsp;{district.district_id}</span>
-              <span className={`stamp lg stamp-${district.status}`}>{statusLabel(district.status)}</span>
-            </div>
-            <h2 className="modal-title">{district.name}</h2>
-            <p className="modal-sub">
-              {district.state ?? '—'}
-              {' · '}
-              Enrollment {district.enrollment?.toLocaleString() ?? '—'}
-              {district.website ? ` · ${district.website}` : ''}
-            </p>
+    <>
+      <div className="panel-bg" onClick={onClose} />
+      <aside className="panel" role="dialog" aria-labelledby="panel-title">
+        <div className="panel-hdr">
+          <div className="panel-hdr-top">
+            <span className="id">{district.district_id}</span>
+            <span className={`pill pill-${district.status} lg`}>{statusLabel(district.status)}</span>
+            <div style={{ flex: 1 }} />
+            <button className="ghost sm" onClick={onClose} aria-label="Close panel">
+              Close <span className="kbd">Esc</span>
+            </button>
           </div>
-          <div className="modal-actions">
-            {canRunPipeline && (
+          <h2 id="panel-title">{district.name}</h2>
+          <p className="sub">
+            {district.state ?? '—'}
+            {district.enrollment != null && <> · {district.enrollment.toLocaleString()} students</>}
+            {district.website && <> · <a href={`https://${district.website}`} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>{district.website}</a></>}
+          </p>
+
+          {canRunPipeline && (
+            <div className="panel-hdr-actions">
               <button
                 onClick={runPipeline}
                 disabled={running}
-                className={`primary ${running ? 'running' : ''}`}
+                className={`accent ${running ? 'running' : ''}`}
               >
-                {running ? 'Processing' : e ? 'Re-brief' : 'Brief district'}
+                {running ? 'Running pipeline' : e ? 'Re-run pipeline' : 'Brief this district'}
               </button>
-            )}
-            <button onClick={onClose} className="ghost">Close</button>
-          </div>
-        </header>
+              {e && <span style={{ fontSize: 12, color: 'var(--muted)' }}>Last briefed {fmtTime(e.generated_at)}</span>}
+            </div>
+          )}
+        </div>
 
-        <div className="modal-body">
+        <div className="panel-body">
           {actionMsg && <div className="msg">{actionMsg}</div>}
+
           {pipelineLog && (
             <div className="pipeline-log">
-              {pipelineLog.steps.map((s, i) => <div key={i}>› {s}</div>)}
-              {pipelineLog.errors.map((s, i) => <div key={`e${i}`} className="err-line">⚠ {s}</div>)}
+              {pipelineLog.steps.map((s, i) => <div key={i} className="ok-line">✓ {s}</div>)}
+              {pipelineLog.errors.map((s, i) => <div key={`e${i}`} className="err-line">✗ {s}</div>)}
             </div>
           )}
 
           {district.intake_notes && (
-            <section className="panel">
-              <h3>Intake</h3>
-              <p style={{
-                fontFamily: 'var(--body)',
-                fontStyle: 'italic',
-                fontSize: 17,
-                lineHeight: 1.55,
-                color: 'var(--text)',
-                margin: 0,
-              }}>
-                "{district.intake_notes}"
+            <section className="section">
+              <h3>Intake note</h3>
+              <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.55, color: 'var(--text-2)' }}>
+                {district.intake_notes}
               </p>
             </section>
           )}
 
-          <section className="panel">
-            <h3>Signals on file · {signals.length}</h3>
+          <section className="section">
+            <h3>
+              Resolved signals
+              <span className="h3-count">{signals.length}</span>
+            </h3>
             {signals.length === 0 && (
-              <p style={{ fontStyle: 'italic', color: 'var(--muted)', margin: 0 }}>
-                No intent signals have been resolved to this district.
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--muted)' }}>
+                No intent signals have been resolved to this district yet.
               </p>
             )}
             {signals.map((s) => (
@@ -176,35 +179,65 @@ export default function DistrictDetail({ districtId, onClose, onChanged }: Props
                 </div>
                 <div className="signal-c">
                   <span className="type">{s.type.replace(/_/g, ' ')}</span>
-                  <br />
-                  {summarizeSignal(s.payload)}
+                  <div className="kv">{summarizeSignal(s.payload)}</div>
                 </div>
                 <div className="signal-r">
                   {s.match_strategy?.replace(/_/g, ' ') ?? '—'}
-                  <span className="conf">
-                    {s.match_confidence != null ? `${(s.match_confidence * 100).toFixed(0)}% conf` : ''}
-                  </span>
+                  {s.match_confidence != null && (
+                    <span className={`conf ${s.match_confidence < 0.85 ? 'low' : ''}`}>
+                      {(s.match_confidence * 100).toFixed(0)}%
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
           </section>
 
           {e && (
-            <section className="panel">
-              <h3>Assessment</h3>
+            <section className="section">
+              <h3>
+                Assessment
+                <div className="spacer" />
+                <span className="h3-count">{enrichIdx.list.length} citation{enrichIdx.list.length === 1 ? '' : 's'}</span>
+              </h3>
 
               {e.fit_score != null && (
-                <div className="fit-plate">
-                  {e.fit_score}<small>/ 100 fit</small>
+                <div className="fit-banner">
+                  <div className={`fit-num ${fitClass(e.fit_score)}`}>
+                    {e.fit_score}<small> / 100</small>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div className={`fit-bar ${fitClass(e.fit_score)}`}>
+                      <span style={{ width: `${e.fit_score}%` }} />
+                    </div>
+                    <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 6 }}>
+                      Fit score · {e.fit_score >= 75 ? 'Strong' : e.fit_score >= 50 ? 'Moderate' : 'Weak'}
+                    </div>
+                  </div>
                 </div>
               )}
 
-              <Field label="Region" value={e.region_context} cites={enrichmentNoteIndex.byField('region_context')} />
-              <Field label="SPED footprint" value={describeSped(e)} cites={enrichmentNoteIndex.byField('iep_pct').concat(enrichmentNoteIndex.byField('iep_count_estimate'), enrichmentNoteIndex.byField('sped_program_notes'))} />
-              <Field label="Decision-maker" value={describeDecisionMaker(e)} cites={enrichmentNoteIndex.byField('sped_director_name').concat(enrichmentNoteIndex.byField('sped_director_email'))} />
-              <Field label="Recent initiatives" value={e.recent_initiatives} cites={enrichmentNoteIndex.byField('recent_initiatives')} />
-              <Field label="Pain points" value={e.pain_points} cites={enrichmentNoteIndex.byField('pain_points')} />
-              <Field label="Reasoning" value={e.fit_reasoning} cites={enrichmentNoteIndex.byField('fit_reasoning')} />
+              <Field label="Region" value={e.region_context} cites={enrichIdx.byField('region_context')} />
+              <Field
+                label="SPED footprint"
+                value={describeSped(e)}
+                cites={[
+                  ...enrichIdx.byField('iep_pct'),
+                  ...enrichIdx.byField('iep_count_estimate'),
+                  ...enrichIdx.byField('sped_program_notes'),
+                ]}
+              />
+              <Field
+                label="Decision-maker"
+                value={describeDecisionMaker(e)}
+                cites={[
+                  ...enrichIdx.byField('sped_director_name'),
+                  ...enrichIdx.byField('sped_director_email'),
+                ]}
+              />
+              <Field label="Recent activity" value={e.recent_initiatives} cites={enrichIdx.byField('recent_initiatives')} />
+              <Field label="Pain points" value={e.pain_points} cites={enrichIdx.byField('pain_points')} />
+              <Field label="Reasoning" value={e.fit_reasoning} cites={enrichIdx.byField('fit_reasoning')} />
 
               {e.fit_breakdown && (
                 <dl className="fit-grid">
@@ -217,47 +250,51 @@ export default function DistrictDetail({ districtId, onClose, onChanged }: Props
                 </dl>
               )}
 
-              <CitationList title="Footnotes (assessment)" cites={enrichmentNoteIndex.list} />
+              <CitationList cites={enrichIdx.list} />
             </section>
           )}
 
           {draft && (
-            <section className="panel">
+            <section className="section">
               <h3>
-                Dispatch draft
-                <span className={`stamp stamp-${draft.status}`} style={{ marginLeft: 4 }}>{draft.status}</span>
+                Email draft
+                <span className={`pill pill-${draft.status}`}>{draft.status}</span>
               </h3>
 
-              <div className="draft-meta">
-                <span><strong>To.</strong> {draft.recipient_name ?? '—'}</span>
+              <div className="draft-to">
+                <span><strong>To</strong>{draft.recipient_name ?? '—'}</span>
                 {draft.recipient_title && <span>{draft.recipient_title}</span>}
-                {draft.recipient_email && <span>{draft.recipient_email}</span>}
-                {draft.hook_summary && (
-                  <span style={{ flexBasis: '100%', marginTop: 6 }}>
-                    <strong>Hook.</strong> <span style={{ fontFamily: 'var(--body)', fontStyle: 'italic', fontSize: 14, textTransform: 'none', letterSpacing: 0, color: 'var(--text-dim)' }}>{draft.hook_summary}</span>
-                  </span>
-                )}
+                {draft.recipient_email && <span style={{ fontFamily: 'var(--mono)', fontSize: 12 }}>{draft.recipient_email}</span>}
               </div>
 
-              <label className="lbl">Subject line</label>
+              {draft.hook_summary && (
+                <p className="draft-hook">
+                  <strong>Hook</strong>{draft.hook_summary}
+                </p>
+              )}
+
+              <label className="lbl">Subject</label>
               <input
                 className="inp"
+                type="text"
                 value={editedSubject}
                 onChange={(ev) => setEditedSubject(ev.target.value)}
-                disabled={['approved', 'rejected'].includes(draft.status)}
+                disabled={draftLocked}
               />
 
               <label className="lbl">Body</label>
-              <DraftBody
+              <textarea
+                className="inp"
+                rows={12}
                 value={editedBody}
-                onChange={setEditedBody}
-                disabled={['approved', 'rejected'].includes(draft.status)}
+                onChange={(ev) => setEditedBody(ev.target.value)}
+                disabled={draftLocked}
               />
 
-              <CitationList title="Footnotes (dispatch)" cites={draftNoteIndex.list} />
+              <CitationList cites={draftIdx.list} />
 
-              {!['approved', 'rejected'].includes(draft.status) && (
-                <div className="actions">
+              {!draftLocked && (
+                <div className="draft-actions">
                   <button onClick={() => postDraftAction('edit')}>Save edits</button>
                   <button
                     onClick={() => {
@@ -269,7 +306,7 @@ export default function DistrictDetail({ districtId, onClose, onChanged }: Props
                     Reject
                   </button>
                   <div className="spacer" />
-                  <button onClick={() => postDraftAction('approve')} className="primary">
+                  <button onClick={() => postDraftAction('approve')} className="accent">
                     Approve & dispatch
                   </button>
                 </div>
@@ -278,38 +315,37 @@ export default function DistrictDetail({ districtId, onClose, onChanged }: Props
           )}
 
           {!e && district.status === 'pending' && (
-            <section className="panel">
-              <p style={{ fontFamily: 'var(--body)', fontStyle: 'italic', color: 'var(--text-dim)', margin: 0 }}>
-                This dossier has not yet been briefed. Click <strong>Brief district</strong> above to generate
-                the assessment and a dispatch draft from the signals on file.
+            <section className="section">
+              <p style={{ margin: 0, fontSize: 13.5, color: 'var(--muted)' }}>
+                Not briefed yet. Click <strong style={{ color: 'var(--text)' }}>Brief this district</strong> to
+                generate the assessment and a dispatch draft from the signals on file.
               </p>
             </section>
           )}
 
           {district.non_fit_reason && (
-            <section className="panel">
+            <section className="section">
               <h3>Filed as non-fit</h3>
-              <p style={{ fontFamily: 'var(--body)', fontSize: 15, color: 'var(--text-dim)', margin: 0 }}>
-                {district.non_fit_reason}
-              </p>
+              <p style={{ margin: 0, fontSize: 13.5, color: 'var(--muted)' }}>{district.non_fit_reason}</p>
             </section>
           )}
 
           {district.duplicate_of_external_id && (
-            <section className="panel">
-              <h3>Cross-reference</h3>
-              <p style={{ fontFamily: 'var(--body)', fontSize: 15, color: 'var(--text-dim)', margin: 0 }}>
-                This file duplicates {district.duplicate_of_external_id}; lifecycle consolidated to the older record.
+            <section className="section">
+              <h3>Duplicate</h3>
+              <p style={{ margin: 0, fontSize: 13.5, color: 'var(--muted)' }}>
+                This record duplicates <strong style={{ color: 'var(--text)' }}>{district.duplicate_of_external_id}</strong>.
+                Lifecycle was consolidated onto the older row.
               </p>
             </section>
           )}
         </div>
-      </div>
-    </div>
+      </aside>
+    </>
   )
 }
 
-/* ─── Field row with footnote-style superscripts ─────────────── */
+/* ─── Subcomponents ───────────────────────────────────────────── */
 
 function Field({ label, value, cites }: { label: string; value: string | null | undefined; cites: IndexedCitation[] }) {
   if (!value) return null
@@ -326,46 +362,26 @@ function Field({ label, value, cites }: { label: string; value: string | null | 
   )
 }
 
-/* ─── Email body with editable textarea + drop cap preview ───── */
-
-function DraftBody({ value, onChange, disabled }: { value: string; onChange: (v: string) => void; disabled: boolean }) {
-  return (
-    <textarea
-      className="inp"
-      rows={12}
-      value={value}
-      onChange={(ev) => onChange(ev.target.value)}
-      disabled={disabled}
-    />
-  )
-}
-
-/* ─── Citation list (numbered footnotes) ─────────────────────── */
-
-function CitationList({ title, cites }: { title: string; cites: IndexedCitation[] }) {
+function CitationList({ cites }: { cites: IndexedCitation[] }) {
   if (!cites.length) return null
   return (
     <details className="citations">
-      <summary>{title} · {cites.length}</summary>
+      <summary>{cites.length} citation{cites.length === 1 ? '' : 's'} · click to inspect sources</summary>
       <ol>
         {cites.map((c) => (
-          <li key={c.n} id={`fn-${c.n}`}>
+          <li key={c.n}>
             <strong>{c.field_name}</strong>
             <span className={`src-type ${c.source_type}`}>{c.source_type}</span>
             {c.source_signal_external_id && (
-              <span style={{ marginLeft: 8, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text-dim)' }}>
-                {c.source_signal_external_id}
-              </span>
+              <span className="meta">{c.source_signal_external_id}</span>
             )}
             {c.confidence != null && (
-              <span style={{ marginLeft: 8, fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.1em', color: 'var(--muted)' }}>
-                conf {(c.confidence * 100).toFixed(0)}%
-              </span>
+              <span className="meta">conf {(c.confidence * 100).toFixed(0)}%</span>
             )}
             {c.source_quote && <div className="quote">"{c.source_quote}"</div>}
             {c.source_url && (
               <div style={{ marginTop: 4, fontFamily: 'var(--mono)', fontSize: 11 }}>
-                <a href={c.source_url} target="_blank" rel="noreferrer" style={{ color: 'var(--amber)' }}>
+                <a href={c.source_url} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>
                   {c.source_url}
                 </a>
               </div>
@@ -377,7 +393,7 @@ function CitationList({ title, cites }: { title: string; cites: IndexedCitation[
   )
 }
 
-/* ─── Helpers ──────────────────────────────────────────────── */
+/* ─── Helpers ─────────────────────────────────────────────────── */
 
 type IndexedCitation = Citation & { n: number }
 
@@ -422,4 +438,19 @@ function describeDecisionMaker(e: any): string | null {
   if (e.sped_director_title) parts.push(e.sped_director_title)
   if (e.sped_director_email) parts.push(e.sped_director_email)
   return parts.length ? parts.join(' · ') : null
+}
+
+function fmtTime(iso: string | null | undefined): string {
+  if (!iso) return ''
+  try {
+    const d = new Date(iso)
+    const now = new Date()
+    const diffMin = Math.floor((now.getTime() - d.getTime()) / 60000)
+    if (diffMin < 1) return 'just now'
+    if (diffMin < 60) return `${diffMin}m ago`
+    if (diffMin < 24 * 60) return `${Math.floor(diffMin / 60)}h ago`
+    return d.toLocaleDateString()
+  } catch {
+    return ''
+  }
 }
