@@ -371,7 +371,7 @@ function CitationList({ cites }: { cites: IndexedCitation[] }) {
         {cites.map((c) => (
           <li key={c.n}>
             <strong>{c.field_name}</strong>
-            <span className={`src-type ${c.source_type}`}>{c.source_type}</span>
+            <span className={`src-type src-type-${c.source_type}`}>{c.source_type}</span>
             {c.source_signal_external_id && (
               <span className="meta">{c.source_signal_external_id}</span>
             )}

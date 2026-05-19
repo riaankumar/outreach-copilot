@@ -969,10 +969,10 @@ textarea.inp {
   color: var(--muted);
   letter-spacing: 0.02em;
 }
-.citations .src-type.signal     { color: var(--blue); background: var(--blue-soft); }
-.citations .src-type.intake_note{ color: var(--green); background: var(--green-soft); }
-.citations .src-type.inference  { color: var(--purple); background: var(--purple-soft); }
-.citations .src-type.enrichment { color: var(--slate); background: var(--slate-soft); }
+.citations .src-type-signal     { color: var(--blue); background: var(--blue-soft); }
+.citations .src-type-intake_note{ color: var(--green); background: var(--green-soft); }
+.citations .src-type-inference  { color: var(--purple); background: var(--purple-soft); }
+.citations .src-type-enrichment { color: var(--slate); background: var(--slate-soft); }
 .citations .quote {
   margin-top: 4px;
   font-style: italic;
