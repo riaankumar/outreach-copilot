@@ -17,10 +17,10 @@
   --muted:        #57534e;
   --muted-2:      #a8a29e;
 
-  --accent:       #2563eb;   /* Clay blue — primary CTA */
-  --accent-soft:  #eff6ff;
-  --accent-2:     #1d4ed8;
-  --accent-3:     #1e40af;
+  --accent:       #3535ee;   /* Journify indigo — primary CTA + brand */
+  --accent-soft:  #eef0ff;
+  --accent-2:     #2424d4;
+  --accent-3:     #1d1db8;
   /* Warm accent kept for Send-today highlight and warning callouts */
   --warm:         #c2410c;
   --warm-soft:    #fff7ed;
@@ -94,24 +94,27 @@ body {
 .sidebar-brand {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 0 8px 16px;
+  gap: 8px;
+  padding: 2px 8px 16px;
   border-bottom: 1px solid var(--border);
   margin-bottom: 10px;
 }
 .sidebar-brand-mark {
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
-  background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
-  display: inline-block;
-  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.25);
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  flex-shrink: 0;
 }
+.sidebar-brand-mark svg { width: 28px; height: 28px; }
 .sidebar-brand-name {
-  font-size: 16px;
+  font-size: 22px;
   font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text);
+  letter-spacing: -0.04em;
+  color: var(--accent);
+  font-family: var(--sans);
 }
 
 .sidebar-nav {
@@ -287,7 +290,7 @@ body {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, #5d3aff 100%);
   color: white;
   font-weight: 600;
   font-size: 12px;
