@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import ChatDrawer from './ChatDrawer'
 import DistrictDetail from './DistrictDetail'
 import DistrictsTable from './DistrictsTable'
+import ImportPage from './ImportPage'
 import Sidebar, { type View } from './Sidebar'
+import UnmatchedPage from './UnmatchedPage'
 import type { District } from './types'
 import './App.css'
 
@@ -16,6 +18,8 @@ const VIEW_TO_FILTER: Record<View, StatusFilter> = {
   sent: 'sent',
   archived: 'archived',
   table: 'all',
+  unmatched: 'all',
+  import: 'all',
 }
 
 const FILTER_SUBHEADINGS: Record<StatusFilter, { title: string; sub: string } | null> = {
@@ -64,7 +68,6 @@ export default function App() {
   const [filter, setFilter] = useState<StatusFilter>('all')
   const [sortKey, setSortKey] = useState<SortKey>('fit')
   const [query, setQuery] = useState('')
-  const [unmatchedOpen, setUnmatchedOpen] = useState(false)
   const [unmatchedCount, setUnmatchedCount] = useState(0)
 
   // When sidebar nav changes, sync the filter for status-based views
@@ -166,7 +169,6 @@ export default function App() {
         sentCount={counts.sent}
         archivedCount={counts.archived}
         unmatchedCount={unmatchedCount}
-        onOpenUnmatched={() => setUnmatchedOpen(true)}
       />
 
       <div className="main">
@@ -194,7 +196,11 @@ export default function App() {
         </header>
 
       <main className="app">
-        {view === 'table' ? (
+        {view === 'unmatched' ? (
+          <UnmatchedPage onRefresh={refresh} />
+        ) : view === 'import' ? (
+          <ImportPage onIngested={refresh} />
+        ) : view === 'table' ? (
           <TableShell
             districts={districts}
             openId={openId}
@@ -404,8 +410,6 @@ export default function App() {
         onClose={() => setChatOpen(false)}
         onActionTaken={refresh}
       />
-
-      {unmatchedOpen && <UnmatchedModal onClose={() => setUnmatchedOpen(false)} />}
     </div>
   )
 }
@@ -531,65 +535,6 @@ function PipelineGroupedView({ districts, openId, onOpen }: {
   )
 }
 
-/* ─── Unmatched signals modal (controlled by App) ──────────── */
-
-type UnmatchedSignal = {
-  signal_id: string
-  type: string
-  date?: string | null
-  match_notes?: string | null
-  payload: Record<string, unknown>
-}
-
-function UnmatchedModal({ onClose }: { onClose: () => void }) {
-  const [items, setItems] = useState<UnmatchedSignal[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetch('/api/signals/unmatched')
-      .then((r) => r.json())
-      .then((data: UnmatchedSignal[]) => setItems(data))
-      .finally(() => setLoading(false))
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
-
-  return (
-    <>
-      <div className="modal-bg-light" onClick={onClose} />
-      <div className="unmatched-modal" role="dialog" aria-label="Unmatched signals">
-        <header className="unmatched-hdr">
-          <div>
-            <h3>Unmatched signals</h3>
-            <p className="sub">
-              These didn't resolve to any district. The matcher recorded why; review and decide.
-            </p>
-          </div>
-          <button className="ghost sm" onClick={onClose}>Close <span className="kbd">Esc</span></button>
-        </header>
-        <div className="unmatched-body">
-          {loading && <p className="muted">Loading…</p>}
-          {!loading && items.length === 0 && <p className="muted">Nothing unmatched. Good.</p>}
-          {items.map((s) => (
-            <article key={s.signal_id} className="unmatched-item">
-              <header>
-                <span className="card-id">{s.signal_id}</span>
-                <span className="pill pill-pending">{s.type.replace(/_/g, ' ')}</span>
-                {s.date && <span className="muted small">{s.date}</span>}
-              </header>
-              {s.match_notes && (
-                <p className="match-notes"><strong>Why unmatched.</strong> {s.match_notes}</p>
-              )}
-              <pre className="payload">{prettyPayload(s.payload)}</pre>
-            </article>
-          ))}
-        </div>
-      </div>
-    </>
-  )
-}
-
 /* ─── Table view shell ─────────────────────────────────────── */
 
 function TableShell({
@@ -658,14 +603,6 @@ function TableShell({
       />
     </>
   )
-}
-
-function prettyPayload(p: Record<string, unknown>): string {
-  const skip = new Set(['signal_id', 'type', 'date'])
-  return Object.entries(p)
-    .filter(([k]) => !skip.has(k))
-    .map(([k, v]) => `${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`)
-    .join('\n')
 }
 
 /* ─── Quick action card ─────────────────────────────────────── */

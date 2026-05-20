@@ -1620,6 +1620,182 @@ button.accent.running::after {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
+/* ─── Page header icon variants ──────────────────────────── */
+
+.page-hdr-icon.warn {
+  background: var(--warm-soft);
+  color: var(--warm);
+}
+
+/* ─── Unmatched signals page ─────────────────────────────── */
+
+.unmatched-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.unmatched-row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.unmatched-row > header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.unmatched-row .match-notes {
+  margin: 6px 0 8px;
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+.unmatched-row .match-notes strong {
+  color: var(--warm);
+  font-weight: 600;
+  margin-right: 4px;
+}
+.unmatched-row .payload {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+  white-space: pre-wrap;
+  line-height: 1.6;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* ─── Import data page ───────────────────────────────────── */
+
+.import-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 18px;
+}
+
+.import-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.import-card > header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+.import-card > header .sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.import-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.import-textarea {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.55;
+  min-height: 200px;
+}
+
+.import-submit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.import-submit code {
+  font-family: var(--mono);
+  font-size: 11px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.import-result {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.import-result.ok {
+  background: var(--green-soft);
+  border: 1px solid #bbf7d0;
+  color: var(--green);
+}
+.import-result.ok strong { color: var(--green); }
+.import-result.err {
+  background: var(--red-soft);
+  border: 1px solid #fecaca;
+  color: var(--red);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.import-result details { margin-top: 6px; }
+.import-result details summary { cursor: pointer; font-weight: 500; }
+.import-result details ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+
+.sources {
+  margin-top: 28px;
+  padding: 20px 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.sources h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.sources ul {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13.5px;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+.sources li { margin-bottom: 6px; }
+.sources p {
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.sources code {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin: 0 2px;
+}
+
 /* ─── Spreadsheet table view ─────────────────────────────── */
 
 .table-wrap {
