@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import ChatDrawer from './ChatDrawer'
 import DistrictDetail from './DistrictDetail'
 import type { District } from './types'
 import './App.css'
@@ -37,6 +38,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [openId, setOpenId] = useState<string | null>(null)
+  const [chatOpen, setChatOpen] = useState(false)
   const [filter, setFilter] = useState<StatusFilter>('all')
   const [sortKey, setSortKey] = useState<SortKey>('fit')
   const [query, setQuery] = useState('')
@@ -233,6 +235,21 @@ export default function App() {
           onChanged={refresh}
         />
       )}
+
+      <button
+        className="copilot-fab"
+        onClick={() => { setOpenId(null); setChatOpen(true) }}
+        aria-label="Open SDR copilot"
+      >
+        <span className="copilot-fab-icon" aria-hidden="true">✦</span>
+        Ask copilot
+      </button>
+
+      <ChatDrawer
+        open={chatOpen}
+        onClose={() => setChatOpen(false)}
+        onActionTaken={refresh}
+      />
     </>
   )
 }
