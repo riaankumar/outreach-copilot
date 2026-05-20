@@ -151,18 +151,19 @@ _TOOL_SCHEMA = {
             "subject": {
                 "type": "string",
                 "description": (
-                    "4-8 words. MUST start with or contain 'Journify'. MUST also "
-                    "contain either the district's name (or its RFP number / "
-                    "named buyer / specific webinar) AND an outcome or timing "
-                    "promise. The reader should know in 1 second that this is "
-                    "from Journify and that it is about THEIR district. "
-                    "Good: 'Journify for Salt Lake's RFP-2026-014', "
-                    "'Journify in time for Brookhaven's audit', "
-                    "'Journify saves Grandview 4 hrs/day', "
-                    "'Journify cuts Magnolia's IEP load in half'. "
+                    "Structure: '[district-specific hook or outcome], by Journify'. "
+                    "The HOOK leads (a specific district anchor + outcome or timing "
+                    "promise), 'by Journify' or '| Journify' closes. 5-9 words total. "
+                    "The reader gets the value first, the brand second. "
+                    "Good: 'Grandview's 1,000 IEPs cut in half, by Journify', "
+                    "'RFP-2026-014 scoped in time, by Journify', "
+                    "'James, 4 hrs back per day, by Journify', "
+                    "'Brookhaven's audit-ready in time, by Journify', "
+                    "'Salt Lake's RFP, scoped in two weeks | Journify'. "
                     "Bad: 'Scoped to your RFP, in time' (no Journify, no district), "
-                    "'4 hours back per day' (no district), "
-                    "'RFP-XXX, on time' (no Journify, banned previous default)."
+                    "'Journify for Grandview' (Journify leads instead of hook), "
+                    "'4 hours back per day' (no district anchor), "
+                    "'RFP-XXX, on time' (banned previous default)."
                 ),
             },
             "body_hook": {
@@ -352,70 +353,76 @@ Bad: "Would a 15-minute call this week or next be useful? I'm also
 
 No signoff name. The SDR adds their own. No P.S.
 
-═══ SUBJECT LINE — branded, district-specific, outcome promise ═══
+═══ SUBJECT LINE — hook leads, "by Journify" trails ═══
 
-The subject is doing three jobs at once:
-  1. SAY THE BRAND. Start with or include "Journify" so the recipient
-     recognizes the sender at a glance from their inbox.
-  2. NAME THE DISTRICT. Use the district name (or a unique district
-     anchor: RFP number, recipient's name, specific webinar). Same email
-     could not have been sent to anyone else.
-  3. PROMISE AN OUTCOME OR TIMING. Half the time, hours back, on time
-     for the RFP, before May 30, audit-ready, etc.
+STRUCTURE: '[district-specific hook + outcome], by Journify'
+
+The HOOK comes first — a specific district anchor combined with an
+outcome promise or timing commitment. Then a trailing brand
+attribution: ", by Journify" or " | Journify".
+
+Why this order: the recipient skims their inbox and reads the front of
+the subject first. Lead with the value (their district, the outcome).
+The brand attribution at the tail says who is doing the saying.
 
 Rules:
-- 4-8 words.
-- MUST contain the word "Journify".
-- MUST contain the district name OR a unique district anchor
-  (RFP number, recipient first name, named program, specific event).
-- MUST contain an outcome word or a timing word (half, hours, in time,
-  before [date], cuts, saves, two weeks, ready).
-- NO em dashes. NO colons unless they earn their keep.
-- Punchy. Concrete. Reads like a sales person who did real homework.
+- 5-9 words total.
+- MUST end with ", by Journify" or " | Journify".
+- The HOOK (everything before "by Journify") MUST contain:
+  - the district name OR a unique district anchor (RFP number,
+    recipient first name, named program, specific event), AND
+  - an outcome or timing word (half, hours, in time, before [date],
+    cuts, saves, two weeks, ready, scoped, back).
+- NO em dashes. Colons OK only if they earn it.
+- The hook reads like a specific promise to that district. Not a
+  generic claim with a name slotted in.
 
 A menu of patterns. Pick the ONE that best fits THIS district's signals.
-Substitute the district name, RFP number, and outcome where bracketed.
-Vary across districts; never use the same template twice in a row.
+Substitute the district name, RFP number, recipient name, and outcome
+where bracketed. Vary across districts; never use the same template
+twice in a row.
 
-For districts with a procurement deadline:
-  "Journify in time for [District]'s RFP"
-  "Journify for [District]'s RFP-[number]"
-  "Journify built for [District]'s RFP scope"
-  "Journify, scoped for [District] by [deadline date]"
-  "[District]: Journify before [deadline date]"
-  "Journify pilot for [District] in two weeks"
+When the district has a procurement deadline:
+  "RFP-[number] scoped in time, by Journify"
+  "[District]'s RFP scoped, by Journify"
+  "[District]'s RFP, scoped in two weeks | Journify"
+  "Pilot in front of [District] by [date], by Journify"
+  "Ready before [District]'s [date] deadline | Journify"
 
-For districts with a strong outcome story (IEP count, paperwork load):
-  "Journify saves [District] 4 hrs/day"
-  "Journify cuts [District]'s IEP load in half"
-  "Journify in front of [District]'s case managers"
-  "[District] + Journify: IEPs in 5 minutes"
-  "Journify, half the paperwork for [District]"
+When the district has a strong outcome story (IEP count, paperwork load):
+  "[District]'s 1,000 IEPs, half the time, by Journify"
+  "[District] saves 4 hrs/day | Journify"
+  "[District]'s case managers, freed | Journify"
+  "Half the paperwork for [District] | Journify"
+  "IEPs in 5 minutes for [District], by Journify"
 
-For districts where the named recipient is the strongest anchor:
-  "[First name], Journify for [District]"
-  "[First name]: Journify saves your team 4 hrs/day"
-  "Journify in time for [First name]'s SPED team"
+When the recipient is the strongest anchor:
+  "[First name], 4 hrs back per day, by Journify"
+  "[First name]'s SPED team, in one place | Journify"
+  "[First name], your RFP scoped in time, by Journify"
 
-For mission framing (use when the district's signals are about
-documentation pain, not procurement):
-  "Journify gives [District]'s teachers their afternoons back"
-  "Journify: less docs, more students for [District]"
+When the framing is mission / purpose (signals about documentation
+pain, no procurement on the table):
+  "[District]'s teachers, afternoons back | Journify"
+  "Less paperwork, more students for [District] | Journify"
+  "[District]'s Sunday nights, back, by Journify"
 
 BAD subjects (do not use):
-  "Two downloads of the evidence-base paper"      (no Journify, no district)
-  "Following up on your interest"                  (generic)
-  "Quick question about [District]"                (generic + filler word)
-  "AI for special education"                       (generic vendor pitch)
-  "RFP-XXXX question"                              (no Journify, filler)
-  "RFP-XXXX, on time"                              (no Journify, banned default)
-  "Scoped to your RFP, in time"                    (no Journify, no district)
-  "Built for your RFP scope"                       (no Journify, no district)
-  "4 hours back per day"                           (no Journify, no district)
-  "Replace your IEP system"                        (we integrate, never replace)
+  "Two downloads of the evidence-base paper"   (no Journify, no district)
+  "Following up on your interest"               (generic)
+  "Quick question about [District]"             (generic + filler word)
+  "AI for special education"                    (generic vendor pitch)
+  "RFP-XXXX question"                           (no Journify, filler)
+  "RFP-XXXX, on time"                           (no Journify, banned default)
+  "Scoped to your RFP, in time"                 (no Journify, no district)
+  "Built for your RFP scope"                    (no Journify, no district)
+  "4 hours back per day"                        (no Journify, no district)
+  "Journify for [District]"                     (Journify leads — hook should lead)
+  "Journify cuts [District]'s IEP load"         (Journify leads — hook should lead)
+  "Replace your IEP system"                     (we integrate, never replace)
 
-Litmus test: read your subject. If you can't tell from it WHO it is
-from AND WHO it is for, rewrite it.
+Litmus test: the hook should land before the comma. After the comma, the
+brand attribution closes. If the brand leads, rewrite.
 
 ═══ HOOK QUALITY GATE ═══
 
