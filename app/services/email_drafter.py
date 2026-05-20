@@ -136,8 +136,8 @@ _TOOL_SCHEMA = {
             "recipient_name": {"type": ["string", "null"]},
             "recipient_title": {"type": ["string", "null"]},
             "recipient_email": {"type": ["string", "null"]},
-            "subject": {"type": "string", "description": "≤ 60 chars, specific, no clickbait."},
-            "body": {"type": "string", "description": "120–180 words. Plain text. No subject line, no signoff name (SDR adds their own)."},
+            "subject": {"type": "string", "description": "3-6 words. Outcome/problem-driven. Never references the source signal directly."},
+            "body": {"type": "string", "description": "90-130 words across exactly THREE paragraphs separated by a blank line (\\n\\n): hook, introduction/value, CTA."},
             "hook_summary": {"type": ["string", "null"], "description": "One-line description of the hook used."},
             "citations": {
                 "type": "array",
@@ -170,9 +170,8 @@ The bar: would the recipient read this twice and reply.
 
 ═══ STYLE — NON-NEGOTIABLE ═══
 
-- 60-90 words. 100 is the hard cap. Count words.
-- ZERO em dashes (—) or en dashes (–). Use a period. Two short sentences
-  beats one long one with a dash.
+- 90-130 words across exactly three paragraphs.
+- ZERO em dashes (—) or en dashes (–). Use a period.
 - No semicolons.
 - Plain English. A district administrator with no time should get every
   word on first read. No jargon, no adjective stacks.
@@ -189,52 +188,78 @@ The bar: would the recipient read this twice and reply.
   platform                          best-in-class              robust
   comprehensive                     seamless
 
-═══ STRUCTURE (4 sentences, in order) ═══
+═══ STRUCTURE — EXACTLY THREE PARAGRAPHS, separated by a BLANK LINE ═══
 
-1. HOOK — one sentence. Name the specific signal with a detail
-   (webinar title, document name, RFP number, date). The recipient should
-   instantly know you didn't blast this to 500 districts.
-   Good: "Two of your team registered for our IEP Compliance webinar in
-          March and April, and someone pulled the goal-library whitepaper
-          last week."
-   Bad:  "I noticed you've been engaging with our content."
+The body MUST be three paragraphs. Use TWO newlines (\\n\\n) between them
+so each paragraph renders as a visible block. Do NOT run them together.
 
-2. CONNECTION — one sentence. Tie that signal to a real operational
-   pressure their team feels. Use a number from the enrichment
-   (enrollment, est. IEP count) when you have one.
-   Good: "At ~1,000 IEPs across your district, that goal-library push
-          usually means audit prep is starting to eat weekends."
-   Bad:  "Districts your size face significant documentation challenges."
+PARAGRAPH 1 — HOOK (1-2 sentences)
+Name the specific signal with a detail (webinar title, document name, RFP
+number, date). The recipient should instantly know you didn't blast this
+to 500 districts.
+  Good: "James, two of your team registered for our IEP Compliance webinar
+         in March and again in April, and someone pulled the IEP Goal
+         Library whitepaper on April 16."
+  Bad:  "I noticed you've been engaging with our content."
 
-3. OUTCOME — one sentence. What specifically changes for the SPED team or
-   for kids. OUTCOMES, NOT FEATURES.
-   Good: "Most teams your size get 2-3 hours back per IEP and finish
-          quarterly progress reports on a Friday afternoon instead of
-          a Sunday night."
-   Bad:  "Our AI-powered platform automates compliance workflows."
-   NO FABRICATED STATS. If you don't have a real number, go directional:
-   "tends to", "most teams", "usually". Never make up a percentage.
+PARAGRAPH 2 — INTRODUCTION (2-3 sentences)
+The value paragraph. Connect the signal to a real operational pressure
+their team feels (use a number from the enrichment when you have one).
+Then say what specifically changes for the SPED team or for kids.
+OUTCOMES, NOT FEATURES. NO FABRICATED STATS — go directional ("tends to",
+"most teams", "usually"). Never make up a percentage.
+  Good: "At ~1,000 IEPs across Grandview, manual goal-writing is where
+         the audit risk and the weekend work both come from. Most SPED
+         teams at this scale get 2-3 hours back per IEP and finish
+         quarterly progress on a Friday afternoon instead of a Sunday
+         night."
+  Bad:  "Our AI-powered platform automates compliance workflows seamlessly."
 
-4. CTA — one sentence, ONE ask, with a specific time anchor.
-   Good: "20 minutes next Tuesday or Thursday morning?"
-   Good: "Want me to send the 1-page brief we use with similar districts?"
-   Bad:  "Would a 15-minute call this week or next be useful? I'm also
-          happy to send a one-pager first if that's easier." (two options
-          + filler)
+PARAGRAPH 3 — CTA (1 sentence)
+ONE ask. ONE time anchor.
+  Good: "Worth 20 minutes next Tuesday or Wednesday morning?"
+  Good: "Want me to send the 1-page brief we use with districts your size?"
+  Bad:  "Would a 15-minute call this week or next be useful? I'm also
+         happy to send a one-pager first if that's easier." (two options
+         + filler)
 
-No signoff name. The SDR adds their own.
-No P.S. unless you have a genuinely different, lighter ask.
+No signoff name. The SDR adds their own. No P.S.
 
-═══ SUBJECT LINE ═══
+═══ SUBJECT LINE — outcome-driven, not signal-referential ═══
 
+The subject must hint at what changes for THEM. Frame around the problem
+Journify solves: time saved, audits passed, paperwork gone, evenings back,
+case managers freed. Make them want to open the email.
+
+Rules:
 - 3-6 words.
 - NO em dashes.
-- Reference the signal or the recipient's reality, not the product.
-- Good: "Two webinars and a whitepaper"
-- Good: "RFP-2026-014 question"
-- Good: "Goal-library audit-prep"
-- Bad:  "IEP compliance at scale — for Grandview ISD"
-- Bad:  "Following up on your interest in Journify"
+- Punchy. Curiosity > completeness. Often a partial thought or imperative.
+- Reference an OUTCOME or PAIN POINT, not the signal that triggered the
+  email. The signal is the hook IN THE BODY; the subject is the PROMISE.
+
+GOOD subjects (problem/outcome-driven):
+  "Sunday nights, back"
+  "End the IEP backlog"
+  "2 hours back per IEP"
+  "Audit-ready by Friday"
+  "Cut IEP paperwork in half"
+  "Reclaim your case managers"
+  "Pass the next compliance audit"
+  "Free your SPED team's evenings"
+  "Goal library, in one place"
+  "Stop the Sunday paperwork"
+
+When a recent signal carries real urgency (an RFP deadline, a named pain
+point), you can blend the two:
+  "RFP-2026-014, on time"
+  "1,000 IEPs, half the time"
+
+BAD subjects (signal-referential or generic / AI-slop):
+  "Two downloads of the evidence-base paper"
+  "Following up on your interest"
+  "Quick question about Grandview"
+  "AI for special education"
 
 ═══ HOOK QUALITY GATE ═══
 

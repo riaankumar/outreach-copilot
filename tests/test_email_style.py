@@ -86,17 +86,26 @@ def test_word_count_basic():
 
 
 def test_email_under_word_cap_after_cleaning():
-    """A real spec-compliant draft should clean to ≤ 100 words."""
+    """A real spec-compliant draft should clean to ≤ 130 words (the 3-paragraph
+    structure target). The cleaner must not blow the cap on its own."""
     sample = (
         "Hi James, two of your team registered for our IEP Compliance webinar "
         "in March and April, and someone pulled the goal-library whitepaper "
-        "last week. At a thousand IEPs across Grandview, that pattern usually "
-        "means audit prep is starting to eat weekends. Most SPED teams your "
-        "size get back two to three hours per IEP and finish quarterly progress "
-        "on a Friday afternoon. Worth twenty minutes next Tuesday or Thursday "
-        "morning?"
+        "last week.\n\n"
+        "At a thousand IEPs across Grandview, that pattern usually means audit "
+        "prep is starting to eat weekends. Most SPED teams your size get back "
+        "two to three hours per IEP and finish quarterly progress on a Friday "
+        "afternoon instead of a Sunday night.\n\n"
+        "Worth twenty minutes next Tuesday or Thursday morning?"
     )
-    assert word_count(clean_body(sample)) <= 100
+    assert word_count(clean_body(sample)) <= 130
+
+
+def test_three_paragraph_structure_preserved():
+    """clean_body must preserve the \\n\\n separators that mark paragraphs."""
+    sample = "Hook line.\n\nIntroduction paragraph here.\n\nCTA?"
+    out = clean_body(sample)
+    assert out.count("\n\n") == 2, "Three paragraphs should be separated by exactly two blank lines"
 
 
 # ─── Banned phrase enumeration ──────────────────────────────
