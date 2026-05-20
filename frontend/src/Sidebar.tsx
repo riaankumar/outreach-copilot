@@ -10,13 +10,12 @@ type Props = {
   sentCount: number
   archivedCount: number
   unmatchedCount: number
-  onOpenChat: () => void
   onOpenUnmatched: () => void
 }
 
 export default function Sidebar({
   active, onSelect, queueCount, pipelineCount, sentCount, archivedCount,
-  unmatchedCount, onOpenChat, onOpenUnmatched,
+  unmatchedCount, onOpenUnmatched,
 }: Props) {
   return (
     <aside className="sidebar" aria-label="Primary navigation">
@@ -64,9 +63,6 @@ export default function Sidebar({
       </nav>
 
       <div className="sidebar-bottom">
-        <NavItem
-          icon={<SparkleIcon />} label="Ask copilot" onClick={onOpenChat}
-        />
         <NavItem icon={<SettingsIcon />} label="Settings" disabled />
         <NavItem icon={<BookIcon />} label="Docs" disabled />
       </div>
@@ -117,6 +113,5 @@ function SendIcon() { return <_Svg><line x1="22" y1="2" x2="11" y2="13"/><polygo
 function CheckIcon() { return <_Svg><polyline points="20 6 9 17 4 12"/></_Svg> }
 function ArchiveIcon() { return <_Svg><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></_Svg> }
 function SignalIcon() { return <_Svg><path d="M2 12h2a8 8 0 0 1 16 0h2"/><path d="M6 12h2a4 4 0 0 1 8 0h2"/><circle cx="12" cy="12" r="1.5"/></_Svg> }
-function SparkleIcon() { return <_Svg><path d="M12 2l1.5 5L19 8l-5.5 1L12 14l-1.5-5L5 8l5.5-1z"/><circle cx="19" cy="17" r="1"/><circle cx="5" cy="17" r="1"/></_Svg> }
 function SettingsIcon() { return <_Svg><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></_Svg> }
 function BookIcon() { return <_Svg><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></_Svg> }

@@ -166,7 +166,6 @@ export default function App() {
         sentCount={counts.sent}
         archivedCount={counts.archived}
         unmatchedCount={unmatchedCount}
-        onOpenChat={() => setChatOpen(true)}
         onOpenUnmatched={() => setUnmatchedOpen(true)}
       />
 
@@ -390,6 +389,15 @@ export default function App() {
           onChanged={refresh}
         />
       )}
+
+      <button
+        className="copilot-fab"
+        onClick={() => { setOpenId(null); setChatOpen(true) }}
+        aria-label="Open SDR copilot"
+      >
+        <span className="copilot-fab-icon" aria-hidden="true">✦</span>
+        Ask copilot
+      </button>
 
       <ChatDrawer
         open={chatOpen}
