@@ -132,7 +132,8 @@ class EmailDraft(Base):
 
     model_used = Column(String, nullable=True)
     generated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    decided_at = Column(DateTime, nullable=True)
+    decided_at = Column(DateTime, nullable=True)   # when SDR approved/edited/rejected
+    sent_at = Column(DateTime, nullable=True)      # when the SDR marked it sent
 
     district = relationship("District", back_populates="email_draft")
     citations = relationship("Citation", back_populates="email_draft", cascade="all, delete-orphan")
@@ -170,10 +171,30 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, futu
 
 
 def init_db() -> None:
-    """Create all tables. Idempotent — safe to call on startup."""
+    """Create all tables. Idempotent — safe to call on startup.
+
+    Also runs a tiny add-column migration so older dev DBs pick up new
+    columns without losing data. Real product would use Alembic.
+    """
     import os
     os.makedirs("data", exist_ok=True)
     Base.metadata.create_all(engine)
+    _dev_migrate_add_columns()
+
+
+def _dev_migrate_add_columns() -> None:
+    """Add columns to existing SQLite tables when SQLAlchemy can't (because
+    create_all only creates missing tables, not missing columns)."""
+    from sqlalchemy import text
+    expected = {
+        "email_drafts": [("sent_at", "DATETIME")],
+    }
+    with engine.begin() as conn:
+        for table, cols in expected.items():
+            existing = {row[1] for row in conn.execute(text(f"PRAGMA table_info({table})"))}
+            for col_name, col_type in cols:
+                if col_name not in existing:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_type}"))
 
 
 def get_session():

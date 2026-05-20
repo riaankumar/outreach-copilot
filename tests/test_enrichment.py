@@ -172,3 +172,60 @@ def test_patch_unknown_action_400(client):
     # No districts needed — endpoint will 404 on draft id first
     r = client.patch("/api/email-drafts/9999", json={"action": "approve"})
     assert r.status_code == 404
+
+
+def test_patch_send_requires_approved_first(client, monkeypatch):
+    """The 'send' action only works on an approved (or edited) draft."""
+    monkeypatch.setattr(enrichment, "_call_claude", _fake_enrichment_response)
+    monkeypatch.setattr(email_drafter, "_call_claude", _fake_draft_response)
+    client.post("/api/districts/bulk", json=SAMPLE_DISTRICTS)
+    client.post("/api/signals/bulk", json={"signals": SAMPLE_SIGNALS})
+    client.post("/api/districts/D023/run-pipeline")
+
+    draft_id = client.get("/api/districts/D023").json()["email_draft"]["id"]
+    # Draft is still 'draft' — sending should fail
+    r = client.patch(f"/api/email-drafts/{draft_id}", json={"action": "send"})
+    assert r.status_code == 400
+    assert "approved" in r.json()["detail"].lower()
+
+
+def test_patch_send_after_approve_transitions_to_sent(client, monkeypatch):
+    monkeypatch.setattr(enrichment, "_call_claude", _fake_enrichment_response)
+    monkeypatch.setattr(email_drafter, "_call_claude", _fake_draft_response)
+    client.post("/api/districts/bulk", json=SAMPLE_DISTRICTS)
+    client.post("/api/signals/bulk", json={"signals": SAMPLE_SIGNALS})
+    client.post("/api/districts/D023/run-pipeline")
+
+    draft_id = client.get("/api/districts/D023").json()["email_draft"]["id"]
+    client.patch(f"/api/email-drafts/{draft_id}", json={"action": "approve"})
+    r = client.patch(f"/api/email-drafts/{draft_id}", json={"action": "send"})
+    assert r.json()["status"] == "sent"
+    assert r.json()["district_status"] == "sent"
+
+    detail = client.get("/api/districts/D023").json()
+    assert detail["status"] == "sent"
+    assert detail["email_draft"]["sent_at"] is not None
+
+
+def test_unmatched_signals_endpoint(client):
+    """Lists signals that have no resolved_district_external_id, with notes."""
+    client.post("/api/districts/bulk", json=SAMPLE_DISTRICTS)
+    client.post("/api/signals/bulk", json={"signals": SAMPLE_SIGNALS})
+
+    r = client.get("/api/signals/unmatched")
+    assert r.status_code == 200
+    rows = r.json()
+    # SIG009 (IP-only) is unmatched in our sample
+    assert any(s["signal_id"] == "SIG009" for s in rows)
+    sig009 = next(s for s in rows if s["signal_id"] == "SIG009")
+    assert sig009["match_notes"] is not None
+    assert "payload" in sig009
+
+
+def test_sent_districts_excluded_from_send_priority(client, monkeypatch):
+    """Once sent, a district should drop out of the pipeline view —
+    compute_send_priority returns None for status='sent'."""
+    from app.services.pipeline_view import compute_send_priority
+    assert compute_send_priority(
+        status="sent", fit_score=95, signal_dates=["2026-05-10"],
+    ) is None

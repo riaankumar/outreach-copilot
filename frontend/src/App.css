@@ -355,6 +355,7 @@ button.sm { padding: 6px 10px; font-size: 12px; }
 .pill-non_fit   { color: var(--slate);  border-color: #e2e8f0; background: var(--slate-soft); }
 .pill-duplicate { color: var(--purple); border-color: #ddd6fe; background: var(--purple-soft); }
 .pill-draft     { color: var(--blue);   border-color: #bfdbfe; background: var(--blue-soft); }
+.pill-sent      { color: var(--green);  border-color: #bbf7d0; background: var(--green-soft); }
 .pill.lg { font-size: 12.5px; padding: 4px 10px 4px 9px; }
 .pill.lg::before { width: 7px; height: 7px; }
 
@@ -507,6 +508,165 @@ button.sm { padding: 6px 10px; font-size: 12px; }
   border: 1px solid #fde68a;
   padding: 5px 8px;
   border-radius: 6px;
+}
+
+/* ─── View subheading (one-line tagline below toolbar) ───────── */
+
+.view-sub {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 0 4px 14px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.view-sub strong {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+/* ─── Inline draft preview in approval queue ─────────────── */
+
+.draft-preview {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.draft-preview-subj {
+  font-weight: 600;
+  font-size: 13.5px;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.draft-preview-body {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.draft-preview-hook {
+  font-size: 11.5px;
+  color: var(--amber);
+  background: var(--amber-soft);
+  border: 1px solid #fde68a;
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin-top: 4px;
+}
+.draft-preview-hook strong {
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+/* ─── Unmatched signals pill + modal ─────────────────────── */
+
+.unmatched-pill {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--amber);
+  background: var(--amber-soft);
+  border: 1px solid #fde68a;
+  padding: 3px 9px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 500;
+  letter-spacing: 0;
+  transition: background 100ms;
+}
+.unmatched-pill:hover { background: #fef3c7; }
+
+.modal-bg-light {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 10, 9, 0.42);
+  z-index: 70;
+  animation: bgIn 160ms ease-out both;
+}
+
+.unmatched-modal {
+  position: fixed;
+  top: 6vh; left: 50%;
+  transform: translateX(-50%);
+  width: 680px;
+  max-width: 96vw;
+  max-height: 88vh;
+  background: var(--surface);
+  border-radius: 14px;
+  border: 1px solid var(--border-2);
+  box-shadow: var(--shadow-lg);
+  z-index: 71;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideIn 200ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.unmatched-hdr {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.unmatched-hdr h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+.unmatched-hdr .sub {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  max-width: 50ch;
+}
+
+.unmatched-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.unmatched-item {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.unmatched-item header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.unmatched-item .match-notes {
+  margin: 6px 0;
+  font-size: 12.5px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+.unmatched-item .match-notes strong {
+  color: var(--amber);
+  font-weight: 600;
+  margin-right: 4px;
+}
+.unmatched-item .payload {
+  margin: 6px 0 0;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--muted);
+  white-space: pre-wrap;
+  line-height: 1.6;
 }
 
 /* ─── Pipeline view (segmented approved queue) ───────────────── */

@@ -34,9 +34,13 @@ export type EmailDraft = {
   subject: string
   body: string
   hook_summary?: string | null
+  edited_subject?: string | null
+  edited_body?: string | null
   status: string
   citations: Citation[]
   generated_at?: string | null
+  decided_at?: string | null
+  sent_at?: string | null
 }
 
 export type SendPriority = 'send_today' | 'this_week' | 'later'

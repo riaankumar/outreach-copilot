@@ -205,6 +205,33 @@ def resolve_signals(db: Session = Depends(get_session)) -> dict:
     return resolve_all_unresolved(db)
 
 
+@router.get("/signals/unmatched", tags=["signals"])
+def list_unmatched_signals(db: Session = Depends(get_session)) -> List[dict]:
+    """Signals the matcher couldn't confidently resolve to a district.
+
+    SDRs use this to find signals worth manually triaging — generic email
+    domains, IP-only content views, names that didn't fuzzy-match well.
+    Each row carries `match_notes` explaining *why* it didn't resolve, so
+    the SDR has the evidence trail.
+    """
+    rows = (
+        db.query(Signal)
+        .filter(Signal.resolved_district_external_id.is_(None))
+        .order_by(Signal.signal_date.desc().nulls_last())
+        .all()
+    )
+    return [
+        {
+            "signal_id": s.external_id,
+            "type": s.signal_type,
+            "date": s.signal_date,
+            "match_notes": s.match_notes,
+            "payload": s.payload,
+        }
+        for s in rows
+    ]
+
+
 def _summarize_validation_error(e: ValidationError) -> str:
     parts = []
     for err in e.errors()[:3]:

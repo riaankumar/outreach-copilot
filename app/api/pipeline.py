@@ -152,7 +152,7 @@ def list_district_citations(external_id: str, db: Session = Depends(get_session)
 
 
 class DraftAction(BaseModel):
-    action: str  # "approve" | "edit" | "reject"
+    action: str  # "approve" | "edit" | "reject" | "send"
     edited_subject: Optional[str] = None
     edited_body: Optional[str] = None
     rejection_reason: Optional[str] = None
@@ -177,6 +177,11 @@ def update_draft(draft_id: int, action: DraftAction, db: Session = Depends(get_s
     elif action.action == "reject":
         draft.status = "rejected"
         draft.rejection_reason = action.rejection_reason
+    elif action.action == "send":
+        if draft.status not in ("approved", "edited"):
+            raise HTTPException(400, detail="must be approved (or edited) before sending")
+        draft.status = "sent"
+        draft.sent_at = datetime.utcnow()
     else:
         raise HTTPException(400, detail=f"unknown action '{action.action}'")
 
@@ -187,5 +192,7 @@ def update_draft(draft_id: int, action: DraftAction, db: Session = Depends(get_s
         draft.district.status = "approved"
     elif draft.status == "rejected":
         draft.district.status = "rejected"
+    elif draft.status == "sent":
+        draft.district.status = "sent"
     db.commit()
     return {"draft_id": draft_id, "status": draft.status, "district_status": draft.district.status}

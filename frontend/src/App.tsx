@@ -4,8 +4,17 @@ import DistrictDetail from './DistrictDetail'
 import type { District } from './types'
 import './App.css'
 
-type StatusFilter = 'all' | 'pending' | 'enriched' | 'approved' | 'archived'
+type StatusFilter = 'all' | 'pending' | 'queue' | 'pipeline' | 'sent' | 'archived'
 type SortKey = 'fit' | 'signals' | 'enrollment' | 'name'
+
+const FILTER_SUBHEADINGS: Record<StatusFilter, { title: string; sub: string } | null> = {
+  all: null,
+  pending: { title: 'Pending', sub: 'Districts not yet briefed by the AI. Click to run the pipeline.' },
+  queue: { title: 'Approval queue', sub: "AI-proposed packets waiting for your review. Approve, edit, or reject." },
+  pipeline: { title: 'Pipeline', sub: 'Approved districts grouped by send priority. Top is what to send today.' },
+  sent: { title: 'Sent', sub: 'Drafts you have already sent. For audit and reference.' },
+  archived: { title: 'Archived', sub: 'Duplicates, non-fits, and rejected drafts.' },
+}
 
 function fmtEnrollment(n: number | null | undefined): string {
   if (n == null) return '—'
@@ -20,8 +29,9 @@ function statusLabel(s: string): string {
 function inFilter(d: District, f: StatusFilter): boolean {
   if (f === 'all') return true
   if (f === 'pending') return d.status === 'pending' || d.status === 'enriching'
-  if (f === 'enriched') return d.status === 'enriched' || d.status === 'edited'
-  if (f === 'approved') return d.status === 'approved'
+  if (f === 'queue') return d.status === 'enriched' || d.status === 'edited'
+  if (f === 'pipeline') return d.status === 'approved'
+  if (f === 'sent') return d.status === 'sent'
   if (f === 'archived') return d.status === 'non_fit' || d.status === 'duplicate' || d.status === 'rejected'
   return true
 }
@@ -62,11 +72,12 @@ export default function App() {
   }, [])
 
   const counts = useMemo(() => {
-    const c = { all: districts.length, pending: 0, enriched: 0, approved: 0, archived: 0 }
+    const c = { all: districts.length, pending: 0, queue: 0, pipeline: 0, sent: 0, archived: 0 }
     for (const d of districts) {
       if (d.status === 'pending' || d.status === 'enriching') c.pending++
-      if (d.status === 'enriched' || d.status === 'edited') c.enriched++
-      if (d.status === 'approved') c.approved++
+      if (d.status === 'enriched' || d.status === 'edited') c.queue++
+      if (d.status === 'approved') c.pipeline++
+      if (d.status === 'sent') c.sent++
       if (d.status === 'non_fit' || d.status === 'duplicate' || d.status === 'rejected') c.archived++
     }
     return c
@@ -102,9 +113,12 @@ export default function App() {
           <div className="topbar-meta">
             <span>{counts.all} districts</span>
             <span className="sep" />
-            <span>{counts.pending} pending review</span>
+            <span>{counts.queue} in queue</span>
             <span className="sep" />
-            <span>{counts.approved} dispatched</span>
+            <span>{counts.pipeline} in pipeline</span>
+            <span className="sep" />
+            <span>{counts.sent} sent</span>
+            <UnmatchedSignalsButton />
           </div>
         </div>
       </header>
@@ -126,8 +140,9 @@ export default function App() {
           <div className="filter-group" role="tablist" aria-label="Filter by status">
             <FilterBtn label="All" count={counts.all} active={filter === 'all'} onClick={() => setFilter('all')} />
             <FilterBtn label="Pending" count={counts.pending} active={filter === 'pending'} onClick={() => setFilter('pending')} />
-            <FilterBtn label="Briefed" count={counts.enriched} active={filter === 'enriched'} onClick={() => setFilter('enriched')} />
-            <FilterBtn label="Approved" count={counts.approved} active={filter === 'approved'} onClick={() => setFilter('approved')} />
+            <FilterBtn label="Approval queue" count={counts.queue} active={filter === 'queue'} onClick={() => setFilter('queue')} />
+            <FilterBtn label="Pipeline" count={counts.pipeline} active={filter === 'pipeline'} onClick={() => setFilter('pipeline')} />
+            <FilterBtn label="Sent" count={counts.sent} active={filter === 'sent'} onClick={() => setFilter('sent')} />
             <FilterBtn label="Archived" count={counts.archived} active={filter === 'archived'} onClick={() => setFilter('archived')} />
           </div>
 
@@ -158,6 +173,13 @@ export default function App() {
           </div>
         </div>
 
+        {FILTER_SUBHEADINGS[filter] && (
+          <div className="view-sub">
+            <strong>{FILTER_SUBHEADINGS[filter]!.title}</strong>
+            <span>{FILTER_SUBHEADINGS[filter]!.sub}</span>
+          </div>
+        )}
+
         {error && <div className="err">{error}</div>}
 
         {!error && filteredSorted.length === 0 && !loading && (
@@ -171,7 +193,7 @@ export default function App() {
           </div>
         )}
 
-        {filter === 'approved' && filteredSorted.length > 0 ? (
+        {filter === 'pipeline' && filteredSorted.length > 0 ? (
           <PipelineGroupedView
             districts={filteredSorted}
             openId={openId}
@@ -185,6 +207,7 @@ export default function App() {
                 d={d}
                 index={i}
                 selected={openId === d.district_id}
+                showDraftPreview={filter === 'queue'}
                 onClick={() => setOpenId(d.district_id)}
               />
             ))}
@@ -236,9 +259,14 @@ function FilterBtn({ label, count, active, onClick }: { label: string; count: nu
   )
 }
 
-function DistrictCard({ d, index, selected, onClick }: {
-  d: District; index: number; selected: boolean; onClick: () => void
+function DistrictCard({ d, index, selected, onClick, showDraftPreview = false }: {
+  d: District; index: number; selected: boolean; onClick: () => void; showDraftPreview?: boolean
 }) {
+  const draft = d.email_draft
+  const subject = draft ? (draft.edited_subject ?? draft.subject) : null
+  const body = draft ? (draft.edited_body ?? draft.body) : null
+  const bodyPreview = body ? body.split('\n').find((l) => l.trim())?.slice(0, 140) : null
+
   return (
     <article
       className={`card ${selected ? 'selected' : ''}`}
@@ -276,7 +304,17 @@ function DistrictCard({ d, index, selected, onClick }: {
         </div>
       </dl>
 
-      {d.intake_notes && <p className="notes">{d.intake_notes}</p>}
+      {showDraftPreview && subject && (
+        <div className="draft-preview">
+          <div className="draft-preview-subj">{subject}</div>
+          {bodyPreview && <div className="draft-preview-body">{bodyPreview}…</div>}
+          {draft?.hook_summary && (
+            <div className="draft-preview-hook"><strong>Hook</strong> {draft.hook_summary}</div>
+          )}
+        </div>
+      )}
+
+      {!showDraftPreview && d.intake_notes && <p className="notes">{d.intake_notes}</p>}
 
       {d.duplicate_of_external_id && (
         <p className="flag">Duplicate of {d.duplicate_of_external_id}</p>
@@ -327,4 +365,96 @@ function PipelineGroupedView({ districts, openId, onOpen }: {
       ))}
     </div>
   )
+}
+
+/* ─── Unmatched signals — topbar pill + modal ───────────────── */
+
+type UnmatchedSignal = {
+  signal_id: string
+  type: string
+  date?: string | null
+  match_notes?: string | null
+  payload: Record<string, unknown>
+}
+
+function UnmatchedSignalsButton() {
+  const [open, setOpen] = useState(false)
+  const [count, setCount] = useState<number | null>(null)
+  const [items, setItems] = useState<UnmatchedSignal[]>([])
+  const [loading, setLoading] = useState(false)
+
+  async function load() {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/signals/unmatched')
+      const data: UnmatchedSignal[] = await res.json()
+      setItems(data)
+      setCount(data.length)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    if (open) window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
+
+  if (count == null || count === 0) return null
+
+  return (
+    <>
+      <span className="sep" />
+      <button
+        className="unmatched-pill"
+        onClick={() => { setOpen(true); load() }}
+        aria-label="Inspect unmatched signals"
+      >
+        ⚠ {count} unmatched signal{count === 1 ? '' : 's'}
+      </button>
+      {open && (
+        <>
+          <div className="modal-bg-light" onClick={() => setOpen(false)} />
+          <div className="unmatched-modal" role="dialog" aria-label="Unmatched signals">
+            <header className="unmatched-hdr">
+              <div>
+                <h3>Unmatched signals</h3>
+                <p className="sub">
+                  These didn't resolve to any district. The matcher recorded why; review and decide.
+                </p>
+              </div>
+              <button className="ghost sm" onClick={() => setOpen(false)}>Close <span className="kbd">Esc</span></button>
+            </header>
+            <div className="unmatched-body">
+              {loading && <p className="muted">Loading…</p>}
+              {!loading && items.length === 0 && <p className="muted">Nothing unmatched. Good.</p>}
+              {items.map((s) => (
+                <article key={s.signal_id} className="unmatched-item">
+                  <header>
+                    <span className="card-id">{s.signal_id}</span>
+                    <span className="pill pill-pending">{s.type.replace(/_/g, ' ')}</span>
+                    {s.date && <span className="muted small">{s.date}</span>}
+                  </header>
+                  {s.match_notes && (
+                    <p className="match-notes"><strong>Why unmatched.</strong> {s.match_notes}</p>
+                  )}
+                  <pre className="payload">{prettyPayload(s.payload)}</pre>
+                </article>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  )
+}
+
+function prettyPayload(p: Record<string, unknown>): string {
+  const skip = new Set(['signal_id', 'type', 'date'])
+  return Object.entries(p)
+    .filter(([k]) => !skip.has(k))
+    .map(([k, v]) => `${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`)
+    .join('\n')
 }

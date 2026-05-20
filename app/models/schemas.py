@@ -106,6 +106,8 @@ class EmailDraftOut(BaseModel):
     status: str
     citations: List[CitationOut] = []
     generated_at: Optional[datetime] = None
+    decided_at: Optional[datetime] = None
+    sent_at: Optional[datetime] = None
 
 
 class DistrictOut(BaseModel):

@@ -66,7 +66,7 @@ export default function DistrictDetail({ districtId, onClose, onChanged }: Props
     }
   }
 
-  async function postDraftAction(action: 'approve' | 'edit' | 'reject', reason?: string) {
+  async function postDraftAction(action: 'approve' | 'edit' | 'reject' | 'send', reason?: string) {
     if (!district?.email_draft) return
     const draftId = district.email_draft.id
     const body: any = { action }
@@ -103,10 +103,11 @@ export default function DistrictDetail({ districtId, onClose, onChanged }: Props
     )
   }
 
-  const canRunPipeline = !['duplicate', 'non_fit', 'rejected'].includes(district.status)
+  const canRunPipeline = !['duplicate', 'non_fit', 'rejected', 'sent'].includes(district.status)
   const e = district.enrichment
   const draft = district.email_draft
-  const draftLocked = draft && ['approved', 'rejected'].includes(draft.status)
+  const draftLocked = draft && ['approved', 'rejected', 'sent'].includes(draft.status)
+  const canSend = draft && ['approved', 'edited'].includes(draft.status)
 
   return (
     <>
@@ -307,9 +308,32 @@ export default function DistrictDetail({ districtId, onClose, onChanged }: Props
                   </button>
                   <div className="spacer" />
                   <button onClick={() => postDraftAction('approve')} className="accent">
-                    Approve & dispatch
+                    Approve
                   </button>
                 </div>
+              )}
+
+              {canSend && (
+                <div className="draft-actions">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(`Subject: ${editedSubject}\n\n${editedBody}`)
+                      setActionMsg('Subject + body copied to clipboard.')
+                    }}
+                  >
+                    Copy to clipboard
+                  </button>
+                  <div className="spacer" />
+                  <button className="accent" onClick={() => postDraftAction('send')}>
+                    Mark as sent
+                  </button>
+                </div>
+              )}
+
+              {draft.status === 'sent' && draft.sent_at && (
+                <p style={{ margin: '12px 0 0', fontSize: 12, color: 'var(--muted)', textAlign: 'right' }}>
+                  Sent {new Date(draft.sent_at).toLocaleString()}
+                </p>
               )}
             </section>
           )}
