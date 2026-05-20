@@ -79,7 +79,7 @@ def draft_email(external_id: str, db: Session) -> EmailDraft:
         recipient_title=llm_out.recipient_title,
         recipient_email=llm_out.recipient_email,
         subject=clean_subject(llm_out.subject),
-        body=clean_body(llm_out.body),
+        body=clean_body(llm_out.composed_body()),
         hook_summary=llm_out.hook_summary,
         status="draft",
         model_used=MODEL,
@@ -122,9 +122,21 @@ class _DraftLLMOut(BaseModel):
     recipient_title: Optional[str] = None
     recipient_email: Optional[str] = None
     subject: str
-    body: str
+    # The LLM returns three required paragraph parts. The server composes
+    # them into `body` with blank lines between, guaranteeing structure.
+    body_hook: Optional[str] = None
+    body_introduction: Optional[str] = None
+    body_cta: Optional[str] = None
+    # Legacy/fallback: a pre-composed body. Tests can still set this directly.
+    body: Optional[str] = None
     hook_summary: Optional[str] = None
     citations: List[_CitationLLM] = Field(default_factory=list)
+
+    def composed_body(self) -> str:
+        """Compose body from the three parts, falling back to a pre-set body."""
+        if self.body_hook and self.body_introduction and self.body_cta:
+            return f"{self.body_hook.strip()}\n\n{self.body_introduction.strip()}\n\n{self.body_cta.strip()}"
+        return (self.body or "").strip()
 
 
 _TOOL_SCHEMA = {
@@ -136,8 +148,30 @@ _TOOL_SCHEMA = {
             "recipient_name": {"type": ["string", "null"]},
             "recipient_title": {"type": ["string", "null"]},
             "recipient_email": {"type": ["string", "null"]},
-            "subject": {"type": "string", "description": "3-6 words. Outcome/problem-driven. Never references the source signal directly."},
-            "body": {"type": "string", "description": "90-130 words across exactly THREE paragraphs separated by a blank line (\\n\\n): hook, introduction/value, CTA."},
+            "subject": {
+                "type": "string",
+                "description": (
+                    "3-6 words. OUTCOME or PAIN POINT, not the source signal. "
+                    "MUST NOT start with 'RFP-', 'Re:', 'Following up', 'Quick question'. "
+                    "MUST NOT be a generic 'X question' or 'X interest'. "
+                    "Good: '4 hours back per day', 'IEP materials in 5 minutes', "
+                    "'Unify your IEP team', 'Sunday nights, back'. "
+                    "If you blend a signal, add an outcome promise: "
+                    "'RFP-2026-014, on time' not 'RFP-2026-014 question'."
+                ),
+            },
+            "body_hook": {
+                "type": "string",
+                "description": "PARAGRAPH 1. 1-2 sentences. Names the specific signal with a date or detail. Must be unmistakably about this district.",
+            },
+            "body_introduction": {
+                "type": "string",
+                "description": "PARAGRAPH 2. 2-3 sentences. Connects the signal to operational pressure (use enrichment numbers when available) then states what changes for the SPED team or kids. Outcomes, not features. May quote Journify's real claims (4+ hours back per day, IEP materials in <5 min, ESSA Tier 4) but never fabricate stats.",
+            },
+            "body_cta": {
+                "type": "string",
+                "description": "PARAGRAPH 3. 1 sentence. ONE ask, ONE time anchor. No two-option asks.",
+            },
             "hook_summary": {"type": ["string", "null"], "description": "One-line description of the hook used."},
             "citations": {
                 "type": "array",
@@ -155,7 +189,7 @@ _TOOL_SCHEMA = {
                 },
             },
         },
-        "required": ["subject", "body", "citations"],
+        "required": ["subject", "body_hook", "body_introduction", "body_cta", "citations"],
     },
 }
 

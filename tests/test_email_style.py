@@ -110,6 +110,29 @@ def test_three_paragraph_structure_preserved():
     assert out.count("\n\n") == 2, "Three paragraphs should be separated by exactly two blank lines"
 
 
+def test_composed_body_from_three_parts():
+    """_DraftLLMOut.composed_body() joins the three paragraph fields with
+    blank lines. This is the schema-level structure guarantee."""
+    from app.services.email_drafter import _DraftLLMOut
+    out = _DraftLLMOut(
+        subject="Test subject",
+        body_hook="HOOK paragraph here.",
+        body_introduction="INTRODUCTION paragraph here.",
+        body_cta="CTA paragraph here?",
+    )
+    composed = out.composed_body()
+    assert composed.count("\n\n") == 2
+    assert composed.startswith("HOOK paragraph here.")
+    assert composed.endswith("CTA paragraph here?")
+
+
+def test_composed_body_falls_back_to_body_field():
+    """If only the legacy body field is set (mocks, older callers), use it."""
+    from app.services.email_drafter import _DraftLLMOut
+    out = _DraftLLMOut(subject="x", body="One block.")
+    assert out.composed_body() == "One block."
+
+
 # ─── Banned phrase enumeration ──────────────────────────────
 
 def test_banned_phrases_list_is_comprehensive():
