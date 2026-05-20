@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import ChatDrawer from './ChatDrawer'
 import DistrictDetail from './DistrictDetail'
 import type { District } from './types'
@@ -102,6 +102,26 @@ export default function App() {
     return [...rows].sort(compare[sortKey])
   }, [districts, filter, sortKey, query])
 
+  // First pending district — used as the target for the "Brief next" quick action
+  const nextPending = useMemo(
+    () => districts.find((d) => d.status === 'pending'),
+    [districts],
+  )
+  const [showQuickActions, setShowQuickActions] = useState(true)
+  const [briefing, setBriefing] = useState(false)
+
+  async function briefNext() {
+    if (!nextPending) return
+    setBriefing(true)
+    try {
+      await fetch(`/api/districts/${nextPending.district_id}/run-pipeline`, { method: 'POST' })
+      await refresh()
+      setOpenId(nextPending.district_id)
+    } finally {
+      setBriefing(false)
+    }
+  }
+
   return (
     <>
       <header className="topbar">
@@ -110,30 +130,114 @@ export default function App() {
             <span className="dot" aria-hidden="true" />
             Journify <small>Outreach Copilot</small>
           </div>
-          <div className="topbar-meta">
-            <span>{counts.all} districts</span>
-            <span className="sep" />
-            <span>{counts.queue} in queue</span>
-            <span className="sep" />
-            <span>{counts.pipeline} in pipeline</span>
-            <span className="sep" />
-            <span>{counts.sent} sent</span>
+          <div className="topbar-center">
+            <div className="topbar-meta">
+              <span><strong>{counts.all}</strong> districts</span>
+              <span className="sep" />
+              <span><strong>{counts.queue}</strong> in queue</span>
+              <span className="sep" />
+              <span><strong>{counts.pipeline}</strong> in pipeline</span>
+              <span className="sep" />
+              <span><strong>{counts.sent}</strong> sent</span>
+            </div>
+          </div>
+          <div className="topbar-right">
             <UnmatchedSignalsButton />
+            <button className="user-pill" aria-label="Account">
+              <span className="avatar">RK</span>
+              <span className="who">
+                <span className="name">Riaan Kumar</span>
+                <span className="org">Journify</span>
+              </span>
+            </button>
           </div>
         </div>
       </header>
 
       <main className="app">
-        <div className="page-hdr">
+        <div className="welcome">
           <div>
-            <h1>Districts</h1>
+            <h2>Hey Riaan, ready to send today?</h2>
             <p className="lede">
-              Review AI-briefed districts, edit the dispatch draft if needed, and approve outreach. Click any row to open the dossier.
+              {counts.queue > 0
+                ? `${counts.queue} packet${counts.queue === 1 ? '' : 's'} waiting for your review and ${counts.pipeline} approved ${counts.pipeline === 1 ? 'is' : 'are'} in the send queue.`
+                : counts.pending > 0
+                  ? `${counts.pending} pending district${counts.pending === 1 ? '' : 's'} ready to brief.`
+                  : 'Inbox zero. Nice.'}
             </p>
           </div>
-          <button onClick={refresh} disabled={loading}>
-            {loading ? 'Refreshing…' : 'Refresh'}
+          <button className="quick-toggle" onClick={() => setShowQuickActions((v) => !v)}>
+            {showQuickActions ? 'Hide' : 'Show'} quick actions
+            <ChevronIcon flipped={!showQuickActions} />
           </button>
+        </div>
+
+        {showQuickActions && (
+          <div className="quick-actions">
+            <QuickCard
+              icon="🚀" iconClass="brief"
+              title={nextPending ? `Brief ${nextPending.name}` : 'Brief next district'}
+              sub={nextPending ? `Run the AI pipeline on the next pending district (${nextPending.district_id}).` : 'No pending districts left.'}
+              count={briefing ? '…' : undefined}
+              onClick={briefNext}
+              disabled={!nextPending || briefing}
+            />
+            <QuickCard
+              icon="📥" iconClass="queue"
+              title="Review the queue"
+              sub="Open the approval queue and review pending packets."
+              count={counts.queue || undefined}
+              onClick={() => setFilter('queue')}
+            />
+            <QuickCard
+              icon="📨" iconClass="send"
+              title="Today's send list"
+              sub="See approved drafts grouped by send priority."
+              count={counts.pipeline || undefined}
+              onClick={() => setFilter('pipeline')}
+            />
+            <QuickCard
+              icon="✦" iconClass="chat"
+              title="Ask the copilot"
+              sub="Get a pipeline summary or run actions from chat."
+              onClick={() => setChatOpen(true)}
+            />
+          </div>
+        )}
+
+        <div className="page-hdr">
+          <div className="page-hdr-left">
+            <span className="page-hdr-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </span>
+            <div>
+              <h1>Districts</h1>
+              <p className="lede">
+                Review AI-briefed districts, edit the dispatch draft if needed, and approve outreach.
+              </p>
+            </div>
+          </div>
+          <div className="page-hdr-actions">
+            <button onClick={() => setFilter('queue')} aria-label="Open approval queue">
+              <InboxIcon /> Inbox {counts.queue > 0 && <span className="cnt-badge">{counts.queue}</span>}
+            </button>
+            <button onClick={() => setChatOpen(true)} aria-label="Open analytics via copilot">
+              <BarsIcon /> Analytics
+            </button>
+            <button onClick={refresh} disabled={loading} className="ghost" aria-label="Refresh">
+              <RefreshIcon spinning={loading} />
+            </button>
+            <button
+              className="primary"
+              onClick={briefNext}
+              disabled={!nextPending || briefing}
+            >
+              <PlusIcon /> Brief next
+            </button>
+          </div>
         </div>
 
         <div className="toolbar">
@@ -457,4 +561,51 @@ function prettyPayload(p: Record<string, unknown>): string {
     .filter(([k]) => !skip.has(k))
     .map(([k, v]) => `${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`)
     .join('\n')
+}
+
+/* ─── Quick action card ─────────────────────────────────────── */
+
+function QuickCard({
+  icon, iconClass, title, sub, count, onClick, disabled,
+}: {
+  icon: string
+  iconClass: 'brief' | 'queue' | 'send' | 'chat'
+  title: string
+  sub: string
+  count?: number | string
+  onClick: () => void
+  disabled?: boolean
+}) {
+  return (
+    <button className="quick-card" onClick={onClick} disabled={disabled}>
+      <span className={`quick-card-icon ${iconClass}`} aria-hidden="true">{icon}</span>
+      <span className="quick-card-body">
+        <span className="quick-card-title">
+          <span>{title}</span>
+          {count !== undefined && <span className="cnt">{count}</span>}
+        </span>
+        <span className="quick-card-sub">{sub}</span>
+      </span>
+    </button>
+  )
+}
+
+/* ─── Inline SVG icons (Lucide-ish) ────────────────────────── */
+
+function _Svg({ children, className = 'icon' }: { children: ReactNode; className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      {children}
+    </svg>
+  )
+}
+
+function PlusIcon() { return <_Svg><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></_Svg> }
+function InboxIcon() { return <_Svg><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></_Svg> }
+function BarsIcon() { return <_Svg><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></_Svg> }
+function RefreshIcon({ spinning }: { spinning?: boolean }) {
+  return <_Svg className={`icon ${spinning ? 'spin' : ''}`}><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></_Svg>
+}
+function ChevronIcon({ flipped }: { flipped?: boolean }) {
+  return <_Svg className="icon" >{flipped ? <polyline points="6 9 12 15 18 9"/> : <polyline points="18 15 12 9 6 15"/>}</_Svg>
 }
