@@ -269,7 +269,7 @@ body {
 
 .quick-actions {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 12px;
   margin-bottom: 24px;
 }
@@ -284,6 +284,9 @@ body {
   text-align: left;
   cursor: pointer;
   transition: border-color 120ms, box-shadow 120ms, transform 120ms;
+  /* override button defaults that would clip long titles */
+  white-space: normal;
+  min-width: 0;
 }
 .quick-card:hover {
   border-color: var(--accent);
@@ -313,9 +316,18 @@ body {
   color: var(--text);
   letter-spacing: -0.01em;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 6px;
+  gap: 8px;
+  line-height: 1.3;
+}
+.quick-card-title > span:first-child {
+  flex: 1;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .quick-card-title .cnt {
   font-family: var(--sans);
@@ -325,12 +337,17 @@ body {
   padding: 2px 7px;
   color: var(--muted);
   font-weight: 500;
+  flex-shrink: 0;
 }
 .quick-card-sub {
-  margin-top: 3px;
+  margin-top: 4px;
   font-size: 12.5px;
   color: var(--muted);
   line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* ─── Toolbar: filters + search + sort ────────────────────────── */
@@ -601,14 +618,30 @@ button.primary .cnt-badge { background: rgba(255,255,255,0.25); }
 }
 
 .empty {
-  padding: 80px 24px;
+  padding: 48px 24px;
   text-align: center;
   border: 1px dashed var(--border-2);
   border-radius: 12px;
   background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
-.empty h3 { margin: 0 0 6px; font-size: 15px; }
-.empty p { margin: 0; color: var(--muted); font-size: 13px; }
+.empty-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--muted-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+.empty-icon svg { width: 22px; height: 22px; }
+.empty h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.empty p { margin: 0; color: var(--muted); font-size: 13px; max-width: 46ch; }
 .empty code {
   font-family: var(--mono);
   background: var(--surface-2);

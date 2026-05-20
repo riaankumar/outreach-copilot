@@ -287,14 +287,13 @@ export default function App() {
         {error && <div className="err">{error}</div>}
 
         {!error && filteredSorted.length === 0 && !loading && (
-          <div className="empty">
-            <h3>No districts match this view</h3>
-            {districts.length === 0 ? (
-              <p>Seed the database: <code>uv run python scripts/seed.py</code></p>
-            ) : (
-              <p>Try clearing the search or switching the filter.</p>
-            )}
-          </div>
+          <EmptyState
+            filter={filter}
+            isEmpty={districts.length === 0}
+            queueCount={counts.queue}
+            onJumpQueue={() => setFilter('queue')}
+            onJumpPending={() => setFilter('pending')}
+          />
         )}
 
         {filter === 'pipeline' && filteredSorted.length > 0 ? (
@@ -608,4 +607,77 @@ function RefreshIcon({ spinning }: { spinning?: boolean }) {
 }
 function ChevronIcon({ flipped }: { flipped?: boolean }) {
   return <_Svg className="icon" >{flipped ? <polyline points="6 9 12 15 18 9"/> : <polyline points="18 15 12 9 6 15"/>}</_Svg>
+}
+
+/* ─── Per-view empty states ───────────────────────────────── */
+
+function EmptyState({ filter, isEmpty, queueCount, onJumpQueue, onJumpPending }: {
+  filter: StatusFilter
+  isEmpty: boolean
+  queueCount: number
+  onJumpQueue: () => void
+  onJumpPending: () => void
+}) {
+  if (isEmpty) {
+    return (
+      <div className="empty">
+        <span className="empty-icon"><_Svg><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></_Svg></span>
+        <h3>No data yet</h3>
+        <p>Seed the database to get started: <code>uv run python scripts/seed.py</code></p>
+      </div>
+    )
+  }
+
+  const copy: Record<StatusFilter, { icon: ReactNode; title: string; body: ReactNode; cta?: { label: string; onClick: () => void } }> = {
+    pipeline: {
+      icon: <_Svg><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></_Svg>,
+      title: 'Nothing to send right now',
+      body: queueCount > 0
+        ? `Approve drafts in the Approval queue to populate the send list.`
+        : 'No approved drafts in the pipeline. Brief a pending district to start.',
+      cta: queueCount > 0
+        ? { label: 'Open Approval queue', onClick: onJumpQueue }
+        : { label: 'See pending districts', onClick: onJumpPending },
+    },
+    queue: {
+      icon: <_Svg><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></_Svg>,
+      title: 'Approval queue is empty',
+      body: 'Run the pipeline on a pending district to surface an AI-proposed packet here.',
+      cta: { label: 'See pending districts', onClick: onJumpPending },
+    },
+    sent: {
+      icon: <_Svg><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></_Svg>,
+      title: 'Nothing sent yet',
+      body: 'Approve a draft, then click "Mark as sent" to log it here.',
+    },
+    pending: {
+      icon: <_Svg><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></_Svg>,
+      title: 'No pending districts',
+      body: 'Every district has been briefed or archived.',
+    },
+    archived: {
+      icon: <_Svg><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></_Svg>,
+      title: 'Archive is empty',
+      body: 'Duplicates, non-fit districts, and rejected drafts will appear here.',
+    },
+    all: {
+      icon: <_Svg><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></_Svg>,
+      title: 'No matches',
+      body: 'Try clearing the search or switching the filter.',
+    },
+  }
+
+  const c = copy[filter] ?? copy.all
+  return (
+    <div className="empty">
+      <span className="empty-icon">{c.icon}</span>
+      <h3>{c.title}</h3>
+      <p>{c.body}</p>
+      {c.cta && (
+        <button className="primary sm" style={{ marginTop: 8 }} onClick={c.cta.onClick}>
+          {c.cta.label}
+        </button>
+      )}
+    </div>
+  )
 }
