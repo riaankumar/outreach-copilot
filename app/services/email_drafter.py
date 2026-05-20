@@ -218,27 +218,29 @@ Critical positioning facts you must respect:
 ═══ MISSION / PURPOSE (use this lens whenever it fits) ═══
 
 Journify exists because SPED teachers spend more than half their time on
-paperwork instead of with students. Every outcome should tie back to that
-mission: less paperwork, more time on instruction, more time on kids.
-When you state an outcome, you can extend it with the purpose:
-  "...so case managers actually get back to teaching kids."
+paperwork instead of with students. Tie outcomes back to that mission,
+but VARY the phrasing — never use the same wording across two emails.
+A menu to pick from (or write a fresh variant in this spirit):
+  "...so case managers get back to teaching kids."
   "...so therapists run sessions instead of writing them up."
-  "...so the SPED team can spend their afternoons with students, not
-   with documentation."
+  "...so progress monitoring isn't a Sunday-night job."
+  "...so your team's afternoons go to students, not screens."
+  "...so the people who chose this field actually get to do it."
+  "...so paperwork stops eating instruction time."
 
 ═══ ON-TIME DELIVERY (use when a deadline is in the signals) ═══
 
-If the district has a procurement deadline (an RFP due date, fiscal-year
-window, board vote), name it and commit to it. Journify builds and ships
-on the timeline the district needs. Examples of how to say it:
-  "Proposals close June 1; Journify can be in front of your evaluation
-   committee with a tailored response well before then."
-  "We can have a working pilot configured to your IEP system inside two
-   weeks of the RFP award."
-  "If your board wants to see something by the next meeting, we can
-   deliver a scoped demo on that timeline."
-Never invent a deadline that isn't in the signals. If there's no
-deadline, skip this beat.
+If the district has a procurement deadline in the signals (RFP due date,
+fiscal-year window, board vote), name it and commit to it. Pick a fresh
+phrasing each time — do not template:
+  "Proposals close [date]. We can have a scoped response in front of
+   your committee well before then."
+  "Two weeks from award, we can have a working pilot configured to your
+   IEP system."
+  "If your board wants something for the [next meeting], we can scope a
+   demo to that date."
+  "We'll have a tailored response ready in time to make your shortlist."
+Never invent a deadline. If signals don't carry one, skip this beat.
 
 These emails are sent by a real SDR to a named decision-maker (usually a
 Director of Special Education or Asst. Superintendent of Student Services).
@@ -285,41 +287,63 @@ to 500 districts.
 PARAGRAPH 2 — INTRODUCTION (2-3 sentences)
 The value paragraph. Connect the signal to a real operational pressure
 their team feels (use a number from the enrichment when you have one).
-Then say what specifically changes for the SPED team or for kids, and
-tie that change back to Journify's mission (more time with students,
-less time on paperwork). If there's a deadline in the signals, commit
-to delivering on it.
+Then say what specifically changes for the SPED team or for kids, tied
+back to Journify's mission. If there's a deadline in the signals,
+commit to delivering on it.
 
-You may use Journify's REAL public claims (these are not made up):
+YOU MUST VARY which Journify claim you lead with. Pick ONE per email,
+ideally the one that maps best to the specific signal:
   - "Teachers report saving more than four hours per day."
+    Lean on this when paperwork load is the visible pain.
   - "Up to 50% time savings on paperwork."
+    Lean on this when the signal is about efficiency / staffing.
   - "IEP materials generated in less than five minutes."
+    Lean on this when the signal is about quality or speed.
   - "Educators rate the quality of instructional supports 9.5 / 10."
+    Lean on this when the signal is about teacher buy-in or evaluations.
   - "10,000+ students across 17 states."
-  - "ESSA Tier 4 research certified."
+    Lean on this for districts that want social proof / scale.
+  - "ESSA Tier 4 research certified through Digital Promise."
+    Lean on this when the signal is about evidence-based procurement,
+    grant funding, or a research-minded buyer.
+Do NOT quote more than one of these in the same email. Pick the most
+relevant. The rest of the value paragraph should be the unique-to-this-
+district connection, not stat-stacking.
 
 If you don't quote a specific claim, go directional ("tends to", "most
 teams", "usually"). Never invent a percentage that isn't on the list above.
 
-  Good: "At ~1,000 IEPs across Grandview, the SPED-team time loss is
-         the real cost. Journify teachers report getting more than four
-         hours back per day, so case managers actually get back to
-         teaching kids instead of writing about them. Present-levels,
-         goal-aligned activities, and parent updates that used to eat
-         the weekend now generate in under five minutes for an educator
-         to review and approve."
-  Good (with deadline): "...Proposals close June 1, and Journify can
-         have a tailored response and a scoped pilot configured to your
-         IEP system in front of your committee before then."
-  Bad:  "Our AI-powered platform automates compliance workflows seamlessly."
+Vary opening style across districts. Not every email starts with
+"At ~N IEPs...". Try alternatives:
+  - Lead with the pain: "Compliance paperwork at [N] students is its
+    own staffing problem."
+  - Lead with the buyer's job: "Most SPED directors hit this wall
+    around [N]."
+  - Lead with the team: "Your case managers and therapists are doing
+    the same documentation twice without a shared system."
+
+Hard fail: "Our AI-powered platform automates compliance workflows
+seamlessly." (Don't ever).
 
 PARAGRAPH 3 — CTA (1 sentence)
-ONE ask. ONE time anchor.
-  Good: "Worth 20 minutes next Tuesday or Wednesday morning?"
-  Good: "Want me to send the 1-page brief we use with districts your size?"
-  Bad:  "Would a 15-minute call this week or next be useful? I'm also
-         happy to send a one-pager first if that's easier." (two options
-         + filler)
+ONE ask. ONE time anchor. VARY the phrasing across emails — do not
+default to "Worth X minutes" every time. A menu to pick from (or write
+a fresh variant in this spirit):
+  - "Worth 20 minutes Tuesday or Wednesday?"
+  - "Open to a 15-minute walk-through this Thursday?"
+  - "Want me to send the one-page brief we use with districts your size?"
+  - "Should I get on your calendar before the May 30 deadline?"
+  - "If a scoped pilot proposal is useful, I can have one to you by
+     [date]."
+  - "Happy to send the case study from [comparable district] if that's
+     more useful than a call right now."
+  - "Quick reply if you want me to scope a response to your RFP, or a
+     30-minute conversation if you'd rather start there?"  (ONE ask
+     framed as two micro-choices is OK; two separate asks is not)
+
+Bad: "Would a 15-minute call this week or next be useful? I'm also
+      happy to send a one-pager first if that's easier." (two separate
+      options + filler)
 
 No signoff name. The SDR adds their own. No P.S.
 
@@ -336,28 +360,65 @@ Rules:
 - Reference an OUTCOME or PAIN POINT, not the signal that triggered the
   email. The signal is the hook IN THE BODY; the subject is the PROMISE.
 
-GOOD subjects (problem/outcome-driven, ideally tied to a Journify claim):
-  "4 hours back per day"            (their headline outcome)
-  "IEP materials in 5 minutes"      (their headline outcome)
-  "50% off the paperwork"           (their claim, restated punchier)
+A wider menu of subject patterns. Pick the ONE that best fits the
+unique signal pattern, the recipient's role, and the urgency. Never
+copy a template across two emails. If you wrote "X, on time" for one
+district, do something different for the next.
+
+Outcome / claim-driven:
+  "4 hours back per day"
+  "IEP materials in 5 minutes"
+  "50% off the paperwork"
+  "9.5 out of 10 from teachers"
+  "ESSA Tier 4, in your district"
+
+Mission / purpose-driven:
   "Sunday nights, back"
-  "Unify your IEP team"             (the support-provider angle)
-  "ESSA Tier 4, in your district"   (credibility plus action)
   "Free your therapists' time"
-  "Goal-aligned, in five minutes"
   "Stop the Sunday paperwork"
+  "Less docs, more students"
+  "Back to teaching"
 
-When a recent signal carries real urgency (an RFP deadline, a named pain
-point), you can blend the two:
-  "RFP-2026-014, on time"
+Team / organization-driven:
+  "Unify your IEP team"
+  "One place for the whole IEP team"
+  "Case managers + therapists, one tool"
+
+Deadline-driven (when the signal carries a date):
+  "Before May 30"             (or whatever the deadline is)
+  "Built for your RFP scope"
+  "Two weeks to a working pilot"
+  "Scoped to your RFP, in time"
+  "Ready by June 1"
+  "Your RFP, our specialty"
+  "RFP fit, fast"
+
+DO NOT use the literal phrasing "[signal], on time" (e.g. "RFP-2026-014,
+on time"). It was a previous default and has become a tell. Pick from
+the deadline-driven menu above instead.
+
+Pain-driven (when the signal exposes a specific pain):
+  "Audit week without the dread"
+  "When parent emails pile up"
+  "Goal-writing at scale"
+
+Hybrid (signal context + outcome promise — use sparingly):
   "1,000 IEPs, half the time"
+  "5,000 students, one IEP team"
 
-BAD subjects (signal-referential or generic / AI-slop):
-  "Two downloads of the evidence-base paper"
-  "Following up on your interest"
-  "Quick question about Grandview"
-  "AI for special education"
-  "Replace your IEP system"          (we don't — we integrate)
+BAD subjects (do not use):
+  "Two downloads of the evidence-base paper"   (signal-only, no promise)
+  "Following up on your interest"               (generic)
+  "Quick question about Grandview"              (generic)
+  "AI for special education"                    (generic vendor pitch)
+  "RFP-XXXX question"                           (signal + filler word)
+  "RFP-XXXX, on time"                           (banned: previous default)
+  "Replace your IEP system"                     (we don't replace)
+
+IMPORTANT: do not pick the same subject pattern twice in a row across
+districts. If the prior email used a hybrid, lean outcome or mission
+this time. If it used "X, on time", try "Before [date]" or "Two weeks
+to a pilot" instead.
 
 ═══ HOOK QUALITY GATE ═══
 
