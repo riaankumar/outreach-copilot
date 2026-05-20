@@ -21,7 +21,29 @@ from app.models import Citation, District, EmailDraft, Signal
 
 
 MODEL = os.getenv("JOURNIFY_DRAFT_MODEL", "claude-sonnet-4-6")
-MAX_TOKENS = 1500
+MAX_TOKENS = 700  # tight cap — forces brevity at the API layer
+
+# Tokens we strip post-generation if Claude slips. Prompt bans them first,
+# this is belt-and-suspenders so a regression in the prompt can't ship a
+# bad email.
+_BANNED_PHRASES = (
+    "I hope this finds you well",
+    "I hope this email finds you well",
+    "I noticed",
+    "I'd love to",
+    "I would love to",
+    "happy to send",
+    "happy to share",
+    "happy to be a resource",
+    "either way",
+    "circle back",
+    "touch base",
+    "reach out",
+    "as you work through this",
+    "given where you are",
+    "I didn't want to sit on it",
+    "be a resource",
+)
 
 
 class EmailDraftError(RuntimeError):
@@ -56,8 +78,8 @@ def draft_email(external_id: str, db: Session) -> EmailDraft:
         recipient_name=llm_out.recipient_name,
         recipient_title=llm_out.recipient_title,
         recipient_email=llm_out.recipient_email,
-        subject=llm_out.subject,
-        body=llm_out.body,
+        subject=clean_subject(llm_out.subject),
+        body=clean_body(llm_out.body),
         hook_summary=llm_out.hook_summary,
         status="draft",
         model_used=MODEL,
@@ -138,29 +160,100 @@ _TOOL_SCHEMA = {
 }
 
 
-_SYSTEM = """You are an SDR for Journify writing the first-touch email to
-a K-12 district decision-maker about Journify's AI tools for special
-education paperwork and IEP compliance.
+_SYSTEM = """You write first-touch sales emails for Journify, an AI product
+for K-12 special-education documentation (IEPs, progress monitoring,
+compliance audit-prep).
 
-Guidelines:
-- Open with a specific, recent, district-particular hook drawn from the
-  resolved signals or intake notes. Never with "I hope this finds you well".
-- One concrete claim about Journify, tied to their context.
-- One clear, low-friction ask (15-min call, a 1-pager, intro to a peer).
-- Plain text. No bullets unless absolutely necessary. No subject in the body.
-- 120–180 words.
-- Use the recipient's actual name/title if known. Otherwise address by role
-  ("Hi Director of Special Education,") and leave recipient_name=null.
+These emails are sent by a real SDR to a named decision-maker (usually a
+Director of Special Education or Asst. Superintendent of Student Services).
+The bar: would the recipient read this twice and reply.
 
-Citation rules:
-- `field_name="hook"` cites where the hook came from (signal id or
-  intake_note).
-- `field_name="recipient"` cites where you got the recipient identity.
-- Any specific district claim (program name, dollar amount, hire) needs a
-  citation tied to its source.
-- `source_type='inference'` only when extrapolating beyond the data.
+═══ STYLE — NON-NEGOTIABLE ═══
 
-Output: call `submit_draft`. Do not return prose."""
+- 60-90 words. 100 is the hard cap. Count words.
+- ZERO em dashes (—) or en dashes (–). Use a period. Two short sentences
+  beats one long one with a dash.
+- No semicolons.
+- Plain English. A district administrator with no time should get every
+  word on first read. No jargon, no adjective stacks.
+- Active voice. Concrete nouns. Specific verbs.
+
+═══ BANNED PHRASES (these are AI-slop tells; never use any of these) ═══
+
+  I hope this finds you well       I noticed                  I'd love to
+  I would love to                   happy to send/share        either way
+  circle back                       touch base                 reach out
+  as you work through this          given where you are        be a resource
+  I didn't want to sit on it        leverage / utilize         drive / unlock
+  empower / transform               compliance defensibility   solution
+  platform                          best-in-class              robust
+  comprehensive                     seamless
+
+═══ STRUCTURE (4 sentences, in order) ═══
+
+1. HOOK — one sentence. Name the specific signal with a detail
+   (webinar title, document name, RFP number, date). The recipient should
+   instantly know you didn't blast this to 500 districts.
+   Good: "Two of your team registered for our IEP Compliance webinar in
+          March and April, and someone pulled the goal-library whitepaper
+          last week."
+   Bad:  "I noticed you've been engaging with our content."
+
+2. CONNECTION — one sentence. Tie that signal to a real operational
+   pressure their team feels. Use a number from the enrichment
+   (enrollment, est. IEP count) when you have one.
+   Good: "At ~1,000 IEPs across your district, that goal-library push
+          usually means audit prep is starting to eat weekends."
+   Bad:  "Districts your size face significant documentation challenges."
+
+3. OUTCOME — one sentence. What specifically changes for the SPED team or
+   for kids. OUTCOMES, NOT FEATURES.
+   Good: "Most teams your size get 2-3 hours back per IEP and finish
+          quarterly progress reports on a Friday afternoon instead of
+          a Sunday night."
+   Bad:  "Our AI-powered platform automates compliance workflows."
+   NO FABRICATED STATS. If you don't have a real number, go directional:
+   "tends to", "most teams", "usually". Never make up a percentage.
+
+4. CTA — one sentence, ONE ask, with a specific time anchor.
+   Good: "20 minutes next Tuesday or Thursday morning?"
+   Good: "Want me to send the 1-page brief we use with similar districts?"
+   Bad:  "Would a 15-minute call this week or next be useful? I'm also
+          happy to send a one-pager first if that's easier." (two options
+          + filler)
+
+No signoff name. The SDR adds their own.
+No P.S. unless you have a genuinely different, lighter ask.
+
+═══ SUBJECT LINE ═══
+
+- 3-6 words.
+- NO em dashes.
+- Reference the signal or the recipient's reality, not the product.
+- Good: "Two webinars and a whitepaper"
+- Good: "RFP-2026-014 question"
+- Good: "Goal-library audit-prep"
+- Bad:  "IEP compliance at scale — for Grandview ISD"
+- Bad:  "Following up on your interest in Journify"
+
+═══ HOOK QUALITY GATE ═══
+
+If you can imagine the same hook landing in three other districts, rewrite
+it. The hook must be unmistakably about THIS district. Webinar titles,
+document names, RFP numbers, the recipient's actual name, specific dates.
+
+═══ CITATIONS ═══
+
+- field_name="hook" → cite the source signal id(s).
+- field_name="recipient" → cite the enrichment row.
+- Any specific claim about the district (their RFP, their hire, their
+  webinar attendance) needs a signal-backed citation.
+- Directional claims about "most teams" / "districts your size" are
+  inference with confidence 0.5 — acceptable, but tagged honestly.
+
+═══ OUTPUT ═══
+
+Call submit_draft. Do not return prose. Do not explain. Just the tool call."""
 
 
 def _call_claude(d: District, e, signals: List[Signal]) -> _DraftLLMOut:
@@ -217,3 +310,51 @@ def _call_claude(d: District, e, signals: List[Signal]) -> _DraftLLMOut:
         return _DraftLLMOut.model_validate(tool_use.input)
     except Exception as e:
         raise EmailDraftError(f"Tool output failed validation: {e}") from e
+
+
+# ─── Post-process cleanup (belt-and-suspenders for style enforcement) ──
+
+def clean_subject(s: str) -> str:
+    """Remove dashes from the subject and collapse whitespace."""
+    s = _strip_dashes(s).strip()
+    # Collapse runs of whitespace and pruned punctuation
+    while "  " in s:
+        s = s.replace("  ", " ")
+    while " ," in s or " ." in s:
+        s = s.replace(" ,", ",").replace(" .", ".")
+    return s.strip(" ,.")
+
+
+def clean_body(text: str) -> str:
+    """Strip em/en dashes (replace with a period when sentence-internal,
+    otherwise just remove) and collapse the cosmetic side-effects.
+    Defensive; the prompt should already prevent these."""
+    out = _strip_dashes(text)
+    # collapse spaces left by dash removal
+    while "  " in out:
+        out = out.replace("  ", " ")
+    # tidy " , " or " . " artifacts
+    out = out.replace(" ,", ",").replace(" .", ".").replace(" ?", "?").replace(" !", "!")
+    # normalize trailing whitespace per line
+    out = "\n".join(line.rstrip() for line in out.splitlines())
+    return out.strip()
+
+
+def _strip_dashes(s: str) -> str:
+    """Replace em/en dashes with sentence-terminators when used as such,
+    otherwise with a comma. Leaves hyphens (-) alone."""
+    # Sentence-separator dash: " — " or " – " becomes ". "
+    for sep in (" — ", " – ", " —", " –", "— ", "– "):
+        s = s.replace(sep, ". ")
+    # Any remaining literal em/en becomes a comma so we don't strand words
+    s = s.replace("—", ", ").replace("–", ", ")
+    # Clean double periods that result from "Sentence. . Next."
+    while ". ." in s:
+        s = s.replace(". .", ".")
+    while ".." in s and "..." not in s:
+        s = s.replace("..", ".")
+    return s
+
+
+def word_count(text: str) -> int:
+    return len([w for w in text.split() if w.strip()])
