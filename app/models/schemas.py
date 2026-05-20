@@ -119,6 +119,8 @@ class DistrictOut(BaseModel):
     duplicate_of_external_id: Optional[str] = None
     non_fit_reason: Optional[str] = None
     signal_count: int = 0
+    # Derived for the pipeline view: "send_today" | "this_week" | "later" | None
+    send_priority: Optional[str] = None
     enrichment: Optional[EnrichmentOut] = None
     email_draft: Optional[EmailDraftOut] = None
 

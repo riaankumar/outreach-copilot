@@ -171,56 +171,25 @@ export default function App() {
           </div>
         )}
 
-        <div className="grid">
-          {filteredSorted.map((d, i) => (
-            <article
-              key={d.district_id}
-              className={`card ${openId === d.district_id ? 'selected' : ''}`}
-              onClick={() => setOpenId(d.district_id)}
-              style={{ ['--i' as any]: i }}
-              tabIndex={0}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setOpenId(d.district_id) }}
-            >
-              <header className="card-hdr">
-                <div>
-                  <div className="card-id">{d.district_id}</div>
-                  <h2 className="card-name">{d.name}</h2>
-                  <div className="card-state">
-                    <span>{d.state ?? '—'}</span>
-                    {d.website && <><span className="sep">·</span><span>{d.website}</span></>}
-                  </div>
-                </div>
-                <span className={`pill pill-${d.status}`}>{statusLabel(d.status)}</span>
-              </header>
-
-              <dl className="card-meta">
-                <div>
-                  <dt>Enrollment</dt>
-                  <dd>{fmtEnrollment(d.enrollment)}</dd>
-                </div>
-                <div>
-                  <dt>Signals</dt>
-                  <dd>{d.signal_count}</dd>
-                </div>
-                <div>
-                  <dt>Fit</dt>
-                  <dd className={fitClass(d.enrichment?.fit_score)}>
-                    {d.enrichment?.fit_score ?? '—'}
-                  </dd>
-                </div>
-              </dl>
-
-              {d.intake_notes && <p className="notes">{d.intake_notes}</p>}
-
-              {d.duplicate_of_external_id && (
-                <p className="flag">Duplicate of {d.duplicate_of_external_id}</p>
-              )}
-              {d.non_fit_reason && (
-                <p className="flag">Non-fit: {d.non_fit_reason}</p>
-              )}
-            </article>
-          ))}
-        </div>
+        {filter === 'approved' && filteredSorted.length > 0 ? (
+          <PipelineGroupedView
+            districts={filteredSorted}
+            openId={openId}
+            onOpen={setOpenId}
+          />
+        ) : (
+          <div className="grid">
+            {filteredSorted.map((d, i) => (
+              <DistrictCard
+                key={d.district_id}
+                d={d}
+                index={i}
+                selected={openId === d.district_id}
+                onClick={() => setOpenId(d.district_id)}
+              />
+            ))}
+          </div>
+        )}
 
         <footer className="ftr">
           <span>{filteredSorted.length} of {districts.length} shown</span>
@@ -264,5 +233,98 @@ function FilterBtn({ label, count, active, onClick }: { label: string; count: nu
     >
       {label} <span className="cnt">{count}</span>
     </button>
+  )
+}
+
+function DistrictCard({ d, index, selected, onClick }: {
+  d: District; index: number; selected: boolean; onClick: () => void
+}) {
+  return (
+    <article
+      className={`card ${selected ? 'selected' : ''}`}
+      onClick={onClick}
+      style={{ ['--i' as any]: index }}
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick() }}
+    >
+      <header className="card-hdr">
+        <div>
+          <div className="card-id">{d.district_id}</div>
+          <h2 className="card-name">{d.name}</h2>
+          <div className="card-state">
+            <span>{d.state ?? '—'}</span>
+            {d.website && <><span className="sep">·</span><span>{d.website}</span></>}
+          </div>
+        </div>
+        <span className={`pill pill-${d.status}`}>{statusLabel(d.status)}</span>
+      </header>
+
+      <dl className="card-meta">
+        <div>
+          <dt>Enrollment</dt>
+          <dd>{fmtEnrollment(d.enrollment)}</dd>
+        </div>
+        <div>
+          <dt>Signals</dt>
+          <dd>{d.signal_count}</dd>
+        </div>
+        <div>
+          <dt>Fit</dt>
+          <dd className={fitClass(d.enrichment?.fit_score)}>
+            {d.enrichment?.fit_score ?? '—'}
+          </dd>
+        </div>
+      </dl>
+
+      {d.intake_notes && <p className="notes">{d.intake_notes}</p>}
+
+      {d.duplicate_of_external_id && (
+        <p className="flag">Duplicate of {d.duplicate_of_external_id}</p>
+      )}
+      {d.non_fit_reason && (
+        <p className="flag">Non-fit: {d.non_fit_reason}</p>
+      )}
+    </article>
+  )
+}
+
+const PRIORITY_GROUPS: { key: District['send_priority']; label: string; sub: string }[] = [
+  { key: 'send_today', label: 'Send today', sub: 'Strong fit or recent signal — top of queue.' },
+  { key: 'this_week',  label: 'This week',  sub: 'Moderate fit; warm but not urgent.' },
+  { key: 'later',      label: 'Later',      sub: 'Approved but lower priority. Re-evaluate if new signal arrives.' },
+]
+
+function PipelineGroupedView({ districts, openId, onOpen }: {
+  districts: District[]; openId: string | null; onOpen: (id: string) => void
+}) {
+  const grouped = PRIORITY_GROUPS.map((g) => ({
+    ...g,
+    items: districts.filter((d) => (d.send_priority ?? 'later') === g.key),
+  }))
+  return (
+    <div className="pipeline-view">
+      {grouped.map((g) => g.items.length === 0 ? null : (
+        <section key={g.key ?? 'later'} className="pipeline-group">
+          <header className="pipeline-group-hdr">
+            <h3>
+              {g.label}
+              <span className="pipeline-count">{g.items.length}</span>
+            </h3>
+            <p>{g.sub}</p>
+          </header>
+          <div className="grid">
+            {g.items.map((d, i) => (
+              <DistrictCard
+                key={d.district_id}
+                d={d}
+                index={i}
+                selected={openId === d.district_id}
+                onClick={() => onOpen(d.district_id)}
+              />
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
   )
 }

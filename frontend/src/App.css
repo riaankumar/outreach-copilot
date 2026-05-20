@@ -509,6 +509,53 @@ button.sm { padding: 6px 10px; font-size: 12px; }
   border-radius: 6px;
 }
 
+/* ─── Pipeline view (segmented approved queue) ───────────────── */
+
+.pipeline-view {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.pipeline-group-hdr {
+  margin: 0 0 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.pipeline-group-hdr h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.pipeline-group:first-child .pipeline-group-hdr h3 {
+  color: var(--accent);
+}
+
+.pipeline-count {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--muted-2);
+  letter-spacing: 0;
+}
+
+.pipeline-group-hdr p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  text-align: right;
+  max-width: 60ch;
+}
+
 /* ─── Footer ──────────────────────────────────────────────────── */
 
 .ftr {

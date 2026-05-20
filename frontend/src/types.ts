@@ -39,6 +39,8 @@ export type EmailDraft = {
   generated_at?: string | null
 }
 
+export type SendPriority = 'send_today' | 'this_week' | 'later'
+
 export type District = {
   district_id: string
   name: string
@@ -50,6 +52,7 @@ export type District = {
   duplicate_of_external_id?: string | null
   non_fit_reason?: string | null
   signal_count: number
+  send_priority?: SendPriority | null
   enrichment?: Enrichment | null
   email_draft?: EmailDraft | null
 }

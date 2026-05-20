@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.models import District, DistrictOut, EnrichmentOut, EmailDraftOut, get_session
+from app.services.pipeline_view import compute_send_priority
 
 router = APIRouter()
 
@@ -20,6 +21,12 @@ def _district_to_out(d: District) -> DistrictOut:
     if d.email_draft is not None:
         email_out = EmailDraftOut.model_validate(d.email_draft, from_attributes=True)
 
+    send_priority = compute_send_priority(
+        status=d.status,
+        fit_score=(d.enrichment.fit_score if d.enrichment else None),
+        signal_dates=[s.signal_date for s in (d.signals or [])],
+    )
+
     return DistrictOut(
         district_id=d.external_id,
         name=d.name,
@@ -31,6 +38,7 @@ def _district_to_out(d: District) -> DistrictOut:
         duplicate_of_external_id=d.duplicate_of_external_id,
         non_fit_reason=d.non_fit_reason,
         signal_count=len(d.signals or []),
+        send_priority=send_priority,
         enrichment=enrichment_out,
         email_draft=email_out,
     )
