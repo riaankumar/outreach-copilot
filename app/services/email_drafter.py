@@ -160,9 +160,26 @@ _TOOL_SCHEMA = {
 }
 
 
-_SYSTEM = """You write first-touch sales emails for Journify, an AI product
-for K-12 special-education documentation (IEPs, progress monitoring,
-compliance audit-prep).
+_SYSTEM = """You write first-touch sales emails for Journify Learning, "The
+AI Assistant for Special Education" — an evidence-based AI that helps
+K-12 SPED teams with IEP drafting, present-levels summaries, IEP goal
+progress monitoring, parent communication, and the generation of
+personalized, standards-aligned instructional materials (assessments,
+interventions, lesson plans) tied to each student's IEP goals.
+
+Critical positioning facts you must respect:
+- Journify INTEGRATES with the district's existing IEP system of record
+  (SEIS, Frontline, etc.). It is NOT a replacement. Never pitch against
+  the IEP system they already use.
+- It is purpose-built for SPED. Not general-ed personalization.
+- It serves the WHOLE IEP team: SPED teachers, case managers,
+  paraprofessionals, AND related-service providers (therapists). The
+  unification of the support team is part of the value, not a side note.
+- It is human-in-the-loop. All AI output is labeled AI-generated,
+  editable, and requires educator approval. ESSA Tier 4 Research
+  Certified (Digital Promise) and Responsibly Designed AI certified.
+  Frame as ASSISTIVE, EVIDENCE-BASED, RESPONSIBLY DESIGNED — not
+  autonomous.
 
 These emails are sent by a real SDR to a named decision-maker (usually a
 Director of Special Education or Asst. Superintendent of Student Services).
@@ -188,6 +205,10 @@ The bar: would the recipient read this twice and reply.
   platform                          best-in-class              robust
   comprehensive                     seamless
 
+Also do NOT pitch against their IEP system of record. Don't write things
+like "instead of SEIS/Frontline" or "replace your current SPED software."
+Journify sits ON TOP of those systems.
+
 ═══ STRUCTURE — EXACTLY THREE PARAGRAPHS, separated by a BLANK LINE ═══
 
 The body MUST be three paragraphs. Use TWO newlines (\\n\\n) between them
@@ -206,13 +227,25 @@ PARAGRAPH 2 — INTRODUCTION (2-3 sentences)
 The value paragraph. Connect the signal to a real operational pressure
 their team feels (use a number from the enrichment when you have one).
 Then say what specifically changes for the SPED team or for kids.
-OUTCOMES, NOT FEATURES. NO FABRICATED STATS — go directional ("tends to",
-"most teams", "usually"). Never make up a percentage.
-  Good: "At ~1,000 IEPs across Grandview, manual goal-writing is where
-         the audit risk and the weekend work both come from. Most SPED
-         teams at this scale get 2-3 hours back per IEP and finish
-         quarterly progress on a Friday afternoon instead of a Sunday
-         night."
+OUTCOMES, NOT FEATURES.
+
+You may use Journify's REAL public claims (these are not made up):
+  - "Teachers report saving more than four hours per day."
+  - "Up to 50% time savings on paperwork."
+  - "IEP materials generated in less than five minutes."
+  - "Educators rate the quality of instructional supports 9.5 / 10."
+  - "10,000+ students across 17 states."
+  - "ESSA Tier 4 research certified."
+
+If you don't quote a specific claim, go directional ("tends to", "most
+teams", "usually"). Never invent a percentage that isn't on the list above.
+
+  Good: "At ~1,000 IEPs across Grandview, the SPED-team time loss is
+         the real cost. Journify teachers report getting more than four
+         hours back per day on average — present-levels summaries,
+         goal-aligned activities, and parent updates that used to eat
+         the weekend now generate in under five minutes for an educator
+         to review and approve."
   Bad:  "Our AI-powered platform automates compliance workflows seamlessly."
 
 PARAGRAPH 3 — CTA (1 sentence)
@@ -238,16 +271,15 @@ Rules:
 - Reference an OUTCOME or PAIN POINT, not the signal that triggered the
   email. The signal is the hook IN THE BODY; the subject is the PROMISE.
 
-GOOD subjects (problem/outcome-driven):
+GOOD subjects (problem/outcome-driven, ideally tied to a Journify claim):
+  "4 hours back per day"            (their headline outcome)
+  "IEP materials in 5 minutes"      (their headline outcome)
+  "50% off the paperwork"           (their claim, restated punchier)
   "Sunday nights, back"
-  "End the IEP backlog"
-  "2 hours back per IEP"
-  "Audit-ready by Friday"
-  "Cut IEP paperwork in half"
-  "Reclaim your case managers"
-  "Pass the next compliance audit"
-  "Free your SPED team's evenings"
-  "Goal library, in one place"
+  "Unify your IEP team"             (the support-provider angle)
+  "ESSA Tier 4, in your district"   (credibility plus action)
+  "Free your therapists' time"
+  "Goal-aligned, in five minutes"
   "Stop the Sunday paperwork"
 
 When a recent signal carries real urgency (an RFP deadline, a named pain
@@ -260,6 +292,7 @@ BAD subjects (signal-referential or generic / AI-slop):
   "Following up on your interest"
   "Quick question about Grandview"
   "AI for special education"
+  "Replace your IEP system"          (we don't — we integrate)
 
 ═══ HOOK QUALITY GATE ═══
 
@@ -366,18 +399,19 @@ def clean_body(text: str) -> str:
 
 
 def _strip_dashes(s: str) -> str:
-    """Replace em/en dashes with sentence-terminators when used as such,
-    otherwise with a comma. Leaves hyphens (-) alone."""
-    # Sentence-separator dash: " — " or " – " becomes ". "
+    """Replace em/en dashes with commas. Comma is the safer substitute
+    in cold-email prose: appositives stay grammatical ("the IEP team,
+    case managers, teachers..."), and sentence-separator uses still read
+    as one longer sentence. Leaves hyphens (-) alone."""
+    # Any em/en dash (with or without surrounding spaces) becomes a comma.
     for sep in (" — ", " – ", " —", " –", "— ", "– "):
-        s = s.replace(sep, ". ")
-    # Any remaining literal em/en becomes a comma so we don't strand words
+        s = s.replace(sep, ", ")
     s = s.replace("—", ", ").replace("–", ", ")
-    # Clean double periods that result from "Sentence. . Next."
-    while ". ." in s:
-        s = s.replace(". .", ".")
-    while ".." in s and "..." not in s:
-        s = s.replace("..", ".")
+    # Tidy any double commas that result
+    while ",," in s:
+        s = s.replace(",,", ",")
+    while ", ," in s:
+        s = s.replace(", ,", ",")
     return s
 
 

@@ -22,11 +22,11 @@ from app.services.email_drafter import (
 # ─── clean_subject ──────────────────────────────────────────
 
 def test_subject_removes_em_dash():
-    assert clean_subject("IEP compliance at scale — for Grandview") == "IEP compliance at scale. for Grandview"
+    assert clean_subject("IEP compliance at scale — for Grandview") == "IEP compliance at scale, for Grandview"
 
 
 def test_subject_removes_en_dash():
-    assert clean_subject("Two webinars – a whitepaper") == "Two webinars. a whitepaper"
+    assert clean_subject("Two webinars – a whitepaper") == "Two webinars, a whitepaper"
 
 
 def test_subject_collapses_whitespace():
@@ -41,11 +41,13 @@ def test_subject_leaves_hyphens_alone():
 
 # ─── clean_body ──────────────────────────────────────────────
 
-def test_body_replaces_sentence_separator_em_dash_with_period():
+def test_body_replaces_sentence_separator_em_dash_with_comma():
+    """Comma is the safer substitute: it keeps appositives grammatical
+    and turns sentence-separator dashes into longer-flowing sentences."""
     raw = "You attended twice this spring — March and April."
     out = clean_body(raw)
     assert "—" not in out
-    assert out == "You attended twice this spring. March and April."
+    assert out == "You attended twice this spring, March and April."
 
 
 def test_body_replaces_inline_em_dash_with_comma():
