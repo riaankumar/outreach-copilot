@@ -1,11 +1,22 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import ChatDrawer from './ChatDrawer'
 import DistrictDetail from './DistrictDetail'
+import DistrictsTable from './DistrictsTable'
+import Sidebar, { type View } from './Sidebar'
 import type { District } from './types'
 import './App.css'
 
 type StatusFilter = 'all' | 'pending' | 'queue' | 'pipeline' | 'sent' | 'archived'
 type SortKey = 'fit' | 'signals' | 'enrollment' | 'name'
+
+const VIEW_TO_FILTER: Record<View, StatusFilter> = {
+  home: 'all',
+  queue: 'queue',
+  pipeline: 'pipeline',
+  sent: 'sent',
+  archived: 'archived',
+  table: 'all',
+}
 
 const FILTER_SUBHEADINGS: Record<StatusFilter, { title: string; sub: string } | null> = {
   all: null,
@@ -49,16 +60,39 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [openId, setOpenId] = useState<string | null>(null)
   const [chatOpen, setChatOpen] = useState(false)
+  const [view, setView] = useState<View>('home')
   const [filter, setFilter] = useState<StatusFilter>('all')
   const [sortKey, setSortKey] = useState<SortKey>('fit')
   const [query, setQuery] = useState('')
+  const [unmatchedOpen, setUnmatchedOpen] = useState(false)
+  const [unmatchedCount, setUnmatchedCount] = useState(0)
+
+  // When sidebar nav changes, sync the filter for status-based views
+  function navigate(v: View) {
+    setView(v)
+    setFilter(VIEW_TO_FILTER[v])
+  }
+
+  // When a chip is clicked inside the dashboard, also update the view label
+  function selectFilter(f: StatusFilter) {
+    setFilter(f)
+    if (view === 'table') return  // chips don't apply in table; stay in table
+    if (f === 'queue') setView('queue')
+    else if (f === 'pipeline') setView('pipeline')
+    else if (f === 'sent') setView('sent')
+    else if (f === 'archived') setView('archived')
+    else setView('home')
+  }
 
   async function refresh() {
     setLoading(true)
     try {
-      const res = await fetch('/api/districts')
-      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
-      setDistricts(await res.json())
+      const [dRes, uRes] = await Promise.all([
+        fetch('/api/districts').then((r) => r.json()),
+        fetch('/api/signals/unmatched').then((r) => r.json()).catch(() => []),
+      ])
+      setDistricts(dRes)
+      setUnmatchedCount(Array.isArray(uRes) ? uRes.length : 0)
       setError(null)
     } catch (e: any) {
       setError(e.message ?? String(e))
@@ -123,14 +157,22 @@ export default function App() {
   }
 
   return (
-    <>
-      <header className="topbar">
-        <div className="topbar-inner">
-          <div className="brand">
-            <span className="dot" aria-hidden="true" />
-            Journify <small>Outreach Copilot</small>
-          </div>
-          <div className="topbar-center">
+    <div className="layout">
+      <Sidebar
+        active={view}
+        onSelect={navigate}
+        queueCount={counts.queue}
+        pipelineCount={counts.pipeline}
+        sentCount={counts.sent}
+        archivedCount={counts.archived}
+        unmatchedCount={unmatchedCount}
+        onOpenChat={() => setChatOpen(true)}
+        onOpenUnmatched={() => setUnmatchedOpen(true)}
+      />
+
+      <div className="main">
+        <header className="topbar">
+          <div className="topbar-inner">
             <div className="topbar-meta">
               <span><strong>{counts.all}</strong> districts</span>
               <span className="sep" />
@@ -140,21 +182,36 @@ export default function App() {
               <span className="sep" />
               <span><strong>{counts.sent}</strong> sent</span>
             </div>
+            <div className="topbar-right">
+              <button className="user-pill" aria-label="Account">
+                <span className="avatar">RK</span>
+                <span className="who">
+                  <span className="name">Riaan Kumar</span>
+                  <span className="org">Journify</span>
+                </span>
+              </button>
+            </div>
           </div>
-          <div className="topbar-right">
-            <UnmatchedSignalsButton />
-            <button className="user-pill" aria-label="Account">
-              <span className="avatar">RK</span>
-              <span className="who">
-                <span className="name">Riaan Kumar</span>
-                <span className="org">Journify</span>
-              </span>
-            </button>
-          </div>
-        </div>
-      </header>
+        </header>
 
       <main className="app">
+        {view === 'table' ? (
+          <TableShell
+            districts={districts}
+            openId={openId}
+            onOpen={setOpenId}
+            query={query}
+            onQuery={setQuery}
+            unmatchedCount={unmatchedCount}
+            onRefresh={refresh}
+            loading={loading}
+            briefNext={briefNext}
+            briefing={briefing}
+            nextPending={nextPending}
+            counts={counts}
+          />
+        ) : (
+        <>
         <div className="welcome">
           <div>
             <h2>Hey Riaan, ready to send today?</h2>
@@ -187,14 +244,14 @@ export default function App() {
               title="Review the queue"
               sub="Open the approval queue and review pending packets."
               count={counts.queue || undefined}
-              onClick={() => setFilter('queue')}
+              onClick={() => selectFilter('queue')}
             />
             <QuickCard
               icon="📨" iconClass="send"
               title="Today's send list"
               sub="See approved drafts grouped by send priority."
               count={counts.pipeline || undefined}
-              onClick={() => setFilter('pipeline')}
+              onClick={() => selectFilter('pipeline')}
             />
             <QuickCard
               icon="✦" iconClass="chat"
@@ -221,7 +278,7 @@ export default function App() {
             </div>
           </div>
           <div className="page-hdr-actions">
-            <button onClick={() => setFilter('queue')} aria-label="Open approval queue">
+            <button onClick={() => selectFilter('queue')} aria-label="Open approval queue">
               <InboxIcon /> Inbox {counts.queue > 0 && <span className="cnt-badge">{counts.queue}</span>}
             </button>
             <button onClick={() => setChatOpen(true)} aria-label="Open analytics via copilot">
@@ -242,12 +299,12 @@ export default function App() {
 
         <div className="toolbar">
           <div className="filter-group" role="tablist" aria-label="Filter by status">
-            <FilterBtn label="All" count={counts.all} active={filter === 'all'} onClick={() => setFilter('all')} />
-            <FilterBtn label="Pending" count={counts.pending} active={filter === 'pending'} onClick={() => setFilter('pending')} />
-            <FilterBtn label="Approval queue" count={counts.queue} active={filter === 'queue'} onClick={() => setFilter('queue')} />
-            <FilterBtn label="Pipeline" count={counts.pipeline} active={filter === 'pipeline'} onClick={() => setFilter('pipeline')} />
-            <FilterBtn label="Sent" count={counts.sent} active={filter === 'sent'} onClick={() => setFilter('sent')} />
-            <FilterBtn label="Archived" count={counts.archived} active={filter === 'archived'} onClick={() => setFilter('archived')} />
+            <FilterBtn label="All" count={counts.all} active={filter === 'all'} onClick={() => selectFilter('all')} />
+            <FilterBtn label="Pending" count={counts.pending} active={filter === 'pending'} onClick={() => selectFilter('pending')} />
+            <FilterBtn label="Approval queue" count={counts.queue} active={filter === 'queue'} onClick={() => selectFilter('queue')} />
+            <FilterBtn label="Pipeline" count={counts.pipeline} active={filter === 'pipeline'} onClick={() => selectFilter('pipeline')} />
+            <FilterBtn label="Sent" count={counts.sent} active={filter === 'sent'} onClick={() => selectFilter('sent')} />
+            <FilterBtn label="Archived" count={counts.archived} active={filter === 'archived'} onClick={() => selectFilter('archived')} />
           </div>
 
           <div className="search">
@@ -291,8 +348,8 @@ export default function App() {
             filter={filter}
             isEmpty={districts.length === 0}
             queueCount={counts.queue}
-            onJumpQueue={() => setFilter('queue')}
-            onJumpPending={() => setFilter('pending')}
+            onJumpQueue={() => selectFilter('queue')}
+            onJumpPending={() => selectFilter('pending')}
           />
         )}
 
@@ -321,7 +378,10 @@ export default function App() {
           <span>{filteredSorted.length} of {districts.length} shown</span>
           <span>API :8000 · UI :5173</span>
         </footer>
+        </>
+        )}
       </main>
+      </div>{/* /main */}
 
       {openId && (
         <DistrictDetail
@@ -331,21 +391,14 @@ export default function App() {
         />
       )}
 
-      <button
-        className="copilot-fab"
-        onClick={() => { setOpenId(null); setChatOpen(true) }}
-        aria-label="Open SDR copilot"
-      >
-        <span className="copilot-fab-icon" aria-hidden="true">✦</span>
-        Ask copilot
-      </button>
-
       <ChatDrawer
         open={chatOpen}
         onClose={() => setChatOpen(false)}
         onActionTaken={refresh}
       />
-    </>
+
+      {unmatchedOpen && <UnmatchedModal onClose={() => setUnmatchedOpen(false)} />}
+    </div>
   )
 }
 
@@ -470,7 +523,7 @@ function PipelineGroupedView({ districts, openId, onOpen }: {
   )
 }
 
-/* ─── Unmatched signals — topbar pill + modal ───────────────── */
+/* ─── Unmatched signals modal (controlled by App) ──────────── */
 
 type UnmatchedSignal = {
   signal_id: string
@@ -480,76 +533,121 @@ type UnmatchedSignal = {
   payload: Record<string, unknown>
 }
 
-function UnmatchedSignalsButton() {
-  const [open, setOpen] = useState(false)
-  const [count, setCount] = useState<number | null>(null)
+function UnmatchedModal({ onClose }: { onClose: () => void }) {
   const [items, setItems] = useState<UnmatchedSignal[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
 
-  async function load() {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/signals/unmatched')
-      const data: UnmatchedSignal[] = await res.json()
-      setItems(data)
-      setCount(data.length)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => { load() }, [])
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
-    if (open) window.addEventListener('keydown', onKey)
+    fetch('/api/signals/unmatched')
+      .then((r) => r.json())
+      .then((data: UnmatchedSignal[]) => setItems(data))
+      .finally(() => setLoading(false))
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [open])
-
-  if (count == null || count === 0) return null
+  }, [onClose])
 
   return (
     <>
-      <span className="sep" />
-      <button
-        className="unmatched-pill"
-        onClick={() => { setOpen(true); load() }}
-        aria-label="Inspect unmatched signals"
-      >
-        ⚠ {count} unmatched signal{count === 1 ? '' : 's'}
-      </button>
-      {open && (
-        <>
-          <div className="modal-bg-light" onClick={() => setOpen(false)} />
-          <div className="unmatched-modal" role="dialog" aria-label="Unmatched signals">
-            <header className="unmatched-hdr">
-              <div>
-                <h3>Unmatched signals</h3>
-                <p className="sub">
-                  These didn't resolve to any district. The matcher recorded why; review and decide.
-                </p>
-              </div>
-              <button className="ghost sm" onClick={() => setOpen(false)}>Close <span className="kbd">Esc</span></button>
-            </header>
-            <div className="unmatched-body">
-              {loading && <p className="muted">Loading…</p>}
-              {!loading && items.length === 0 && <p className="muted">Nothing unmatched. Good.</p>}
-              {items.map((s) => (
-                <article key={s.signal_id} className="unmatched-item">
-                  <header>
-                    <span className="card-id">{s.signal_id}</span>
-                    <span className="pill pill-pending">{s.type.replace(/_/g, ' ')}</span>
-                    {s.date && <span className="muted small">{s.date}</span>}
-                  </header>
-                  {s.match_notes && (
-                    <p className="match-notes"><strong>Why unmatched.</strong> {s.match_notes}</p>
-                  )}
-                  <pre className="payload">{prettyPayload(s.payload)}</pre>
-                </article>
-              ))}
-            </div>
+      <div className="modal-bg-light" onClick={onClose} />
+      <div className="unmatched-modal" role="dialog" aria-label="Unmatched signals">
+        <header className="unmatched-hdr">
+          <div>
+            <h3>Unmatched signals</h3>
+            <p className="sub">
+              These didn't resolve to any district. The matcher recorded why; review and decide.
+            </p>
           </div>
-        </>
-      )}
+          <button className="ghost sm" onClick={onClose}>Close <span className="kbd">Esc</span></button>
+        </header>
+        <div className="unmatched-body">
+          {loading && <p className="muted">Loading…</p>}
+          {!loading && items.length === 0 && <p className="muted">Nothing unmatched. Good.</p>}
+          {items.map((s) => (
+            <article key={s.signal_id} className="unmatched-item">
+              <header>
+                <span className="card-id">{s.signal_id}</span>
+                <span className="pill pill-pending">{s.type.replace(/_/g, ' ')}</span>
+                {s.date && <span className="muted small">{s.date}</span>}
+              </header>
+              {s.match_notes && (
+                <p className="match-notes"><strong>Why unmatched.</strong> {s.match_notes}</p>
+              )}
+              <pre className="payload">{prettyPayload(s.payload)}</pre>
+            </article>
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}
+
+/* ─── Table view shell ─────────────────────────────────────── */
+
+function TableShell({
+  districts, openId, onOpen, query, onQuery, unmatchedCount,
+  onRefresh, loading, briefNext, briefing, nextPending, counts,
+}: {
+  districts: District[]
+  openId: string | null
+  onOpen: (id: string) => void
+  query: string
+  onQuery: (q: string) => void
+  unmatchedCount: number
+  onRefresh: () => void
+  loading: boolean
+  briefNext: () => void
+  briefing: boolean
+  nextPending?: District
+  counts: { all: number; pending: number; queue: number; pipeline: number; sent: number; archived: number }
+}) {
+  return (
+    <>
+      <div className="page-hdr">
+        <div className="page-hdr-left">
+          <span className="page-hdr-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/>
+            </svg>
+          </span>
+          <div>
+            <h1>Districts table</h1>
+            <p className="lede">
+              All {counts.all} districts in one spreadsheet. Sort any column. Click a row to open its dossier.
+              {unmatchedCount > 0 && <> · {unmatchedCount} signals unmatched</>}
+            </p>
+          </div>
+        </div>
+        <div className="page-hdr-actions">
+          <div className="search">
+            <input
+              type="text"
+              placeholder="Search…"
+              value={query}
+              onChange={(e) => onQuery(e.target.value)}
+              aria-label="Search districts"
+              style={{ width: 220 }}
+            />
+          </div>
+          <button onClick={onRefresh} disabled={loading} className="ghost" aria-label="Refresh">
+            <RefreshIcon spinning={loading} />
+          </button>
+          <button
+            className="primary"
+            onClick={briefNext}
+            disabled={!nextPending || briefing}
+          >
+            <PlusIcon /> Brief next
+          </button>
+        </div>
+      </div>
+
+      <DistrictsTable
+        districts={districts}
+        openId={openId}
+        onOpen={onOpen}
+        query={query}
+      />
     </>
   )
 }
