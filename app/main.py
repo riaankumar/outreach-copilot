@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.models import init_db
-from app.api import ingest, districts, pipeline, chat
+from app.api import ingest, districts, pipeline, chat, sourcing
 
 
 @asynccontextmanager
@@ -39,6 +39,7 @@ app.include_router(ingest.router, prefix="/api")
 app.include_router(districts.router, prefix="/api")
 app.include_router(pipeline.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
+app.include_router(sourcing.router, prefix="/api")
 
 
 @app.get("/api/health", tags=["meta"])

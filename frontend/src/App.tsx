@@ -4,6 +4,7 @@ import DistrictDetail from './DistrictDetail'
 import DistrictsTable from './DistrictsTable'
 import ImportPage from './ImportPage'
 import Sidebar, { type View } from './Sidebar'
+import SourcingPanel from './SourcingPanel'
 import UnmatchedPage from './UnmatchedPage'
 import type { District } from './types'
 import './App.css'
@@ -69,6 +70,7 @@ export default function App() {
   const [sortKey, setSortKey] = useState<SortKey>('fit')
   const [query, setQuery] = useState('')
   const [unmatchedCount, setUnmatchedCount] = useState(0)
+  const [sourcingOpen, setSourcingOpen] = useState(false)
 
   // When sidebar nav changes, sync the filter for status-based views
   function navigate(v: View) {
@@ -169,6 +171,7 @@ export default function App() {
         sentCount={counts.sent}
         archivedCount={counts.archived}
         unmatchedCount={unmatchedCount}
+        onOpenSourcing={() => setSourcingOpen(true)}
       />
 
       <div className="main">
@@ -409,6 +412,12 @@ export default function App() {
         open={chatOpen}
         onClose={() => setChatOpen(false)}
         onActionTaken={refresh}
+      />
+
+      <SourcingPanel
+        open={sourcingOpen}
+        onClose={() => setSourcingOpen(false)}
+        onAdded={(id) => { refresh(); setOpenId(id) }}
       />
     </div>
   )
