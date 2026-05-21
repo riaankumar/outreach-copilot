@@ -164,27 +164,44 @@ class Citation(Base):
 
 
 # ─── Engine / session factory ──────────────────────────────────────────
+#
+# Driver selection is DATABASE_URL-driven. SQLite is the default for fast
+# local dev + the test in-memory fixture; Postgres is what you set in prod
+# (and what we ran the demo against to prove the abstraction held).
+#
+#   sqlite:///data/copilot.db                  ← default, dev
+#   postgresql+psycopg2://user@host/journify   ← prod / demo
+#
+# SQLAlchemy handles the rest. Only two driver-specific quirks:
+# 1. SQLite needs check_same_thread=False when FastAPI shares connections
+#    across threads.
+# 2. The dev "add missing column" migration uses PRAGMA, which is SQLite-only.
+#    On Postgres we expect a real Alembic migration; for the take-home that
+#    means start from a clean DB.
 
-_DB_PATH = "data/copilot.db"
-engine = create_engine(f"sqlite:///{_DB_PATH}", echo=False, future=True)
+import os
+
+_DEFAULT_SQLITE = "sqlite:///data/copilot.db"
+DATABASE_URL = os.getenv("DATABASE_URL", _DEFAULT_SQLITE)
+_IS_SQLITE = DATABASE_URL.startswith("sqlite")
+
+_connect_args = {"check_same_thread": False} if _IS_SQLITE else {}
+engine = create_engine(DATABASE_URL, echo=False, future=True, connect_args=_connect_args)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
 
 def init_db() -> None:
-    """Create all tables. Idempotent — safe to call on startup.
-
-    Also runs a tiny add-column migration so older dev DBs pick up new
-    columns without losing data. Real product would use Alembic.
-    """
-    import os
-    os.makedirs("data", exist_ok=True)
+    """Create all tables. Idempotent — safe to call on startup."""
+    if _IS_SQLITE:
+        os.makedirs("data", exist_ok=True)
     Base.metadata.create_all(engine)
-    _dev_migrate_add_columns()
+    if _IS_SQLITE:
+        _dev_migrate_add_columns()
 
 
 def _dev_migrate_add_columns() -> None:
-    """Add columns to existing SQLite tables when SQLAlchemy can't (because
-    create_all only creates missing tables, not missing columns)."""
+    """SQLite-only: add columns SQLAlchemy can't (create_all only creates
+    missing tables, not missing columns). Postgres uses Alembic in prod."""
     from sqlalchemy import text
     expected = {
         "email_drafts": [("sent_at", "DATETIME")],
