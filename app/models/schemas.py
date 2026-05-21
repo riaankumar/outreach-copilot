@@ -66,6 +66,8 @@ class SignalsBulkIn(BaseModel):
 # ─── Read models (what the API returns) ────────────────────────────────
 
 class CitationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     field_name: str
     source_type: str
     source_url: Optional[str] = None
@@ -75,6 +77,8 @@ class CitationOut(BaseModel):
 
 
 class EnrichmentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     iep_pct: Optional[float] = None
     iep_count_estimate: Optional[int] = None
     sped_program_notes: Optional[str] = None
@@ -94,6 +98,8 @@ class EnrichmentOut(BaseModel):
 
 
 class EmailDraftOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: Optional[int] = None
     recipient_name: Optional[str] = None
     recipient_title: Optional[str] = None
