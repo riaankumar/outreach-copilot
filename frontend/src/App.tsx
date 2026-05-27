@@ -191,7 +191,6 @@ export default function App() {
                 <span className="avatar">RK</span>
                 <span className="who">
                   <span className="name">Riaan Kumar</span>
-                  <span className="org">Journify</span>
                 </span>
               </button>
             </div>

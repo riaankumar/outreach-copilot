@@ -22,30 +22,7 @@ export default function Sidebar({
   return (
     <aside className="sidebar" aria-label="Primary navigation">
       <div className="sidebar-brand">
-        <span className="sidebar-brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            {/* dashed loop trail */}
-            <path
-              d="M5 18 Q3 12 8 9 Q14 6 12 14"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeDasharray="2 2.5"
-              fill="none"
-            />
-            {/* paper airplane */}
-            <path
-              d="M28 4 L13 13 L19 16 L21 22 L28 4 Z"
-              fill="currentColor"
-            />
-            <path
-              d="M19 16 L21 22 L23 14 Z"
-              fill="currentColor"
-              opacity="0.7"
-            />
-          </svg>
-        </span>
-        <span className="sidebar-brand-name">journify</span>
+        <span className="sidebar-brand-name">Outreach Copilot</span>
       </div>
 
       <nav className="sidebar-nav">
