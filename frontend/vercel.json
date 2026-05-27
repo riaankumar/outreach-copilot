@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/api/signals/unmatched", "destination": "/api/signals/unmatched.json" },
+    { "source": "/api/districts/:id/signals", "destination": "/api/districts/:id/signals.json" },
+    { "source": "/api/districts/:id", "destination": "/api/districts/:id.json" },
+    { "source": "/api/districts", "destination": "/api/districts.json" }
+  ]
+}
