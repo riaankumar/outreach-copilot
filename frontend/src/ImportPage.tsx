@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { apiUrl } from './api'
 
 type AckResult = {
   ok: boolean
@@ -136,7 +137,7 @@ function ImportCard({ title, subtitle, endpoint, wrapKey, schemaExample, onInges
       }
       // Accept either a wrapped object {wrapKey: [...]} or a bare list
       const body = Array.isArray(parsed) ? parsed : parsed
-      const res = await fetch(endpoint, {
+      const res = await fetch(apiUrl(endpoint), {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(body),

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { apiUrl } from './api'
 import type { Citation, District, PipelineResult, Signal } from './types'
 
 type Props = {
@@ -29,8 +30,8 @@ export default function DistrictDetail({ districtId, onClose, onChanged }: Props
 
   async function load() {
     const [dResp, sResp] = await Promise.all([
-      fetch(`/api/districts/${districtId}`).then((r) => r.json()),
-      fetch(`/api/districts/${districtId}/signals`).then((r) => r.json()),
+      fetch(apiUrl(`/api/districts/${districtId}`)).then((r) => r.json()),
+      fetch(apiUrl(`/api/districts/${districtId}/signals`)).then((r) => r.json()),
     ])
     setDistrict(dResp)
     setSignals(sResp)
@@ -54,7 +55,7 @@ export default function DistrictDetail({ districtId, onClose, onChanged }: Props
     setRunning(true)
     setActionMsg(null)
     try {
-      const res = await fetch(`/api/districts/${districtId}/run-pipeline`, { method: 'POST' })
+      const res = await fetch(apiUrl(`/api/districts/${districtId}/run-pipeline`), { method: 'POST' })
       const body: PipelineResult = await res.json()
       setPipelineLog(body)
       await load()
@@ -76,7 +77,7 @@ export default function DistrictDetail({ districtId, onClose, onChanged }: Props
     }
     if (action === 'reject') body.rejection_reason = reason ?? 'no reason given'
 
-    const res = await fetch(`/api/email-drafts/${draftId}`, {
+    const res = await fetch(apiUrl(`/api/email-drafts/${draftId}`), {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
@@ -106,7 +107,7 @@ export default function DistrictDetail({ districtId, onClose, onChanged }: Props
   const canRunPipeline = !['duplicate', 'non_fit', 'rejected', 'sent'].includes(district.status)
   const e = district.enrichment
   const draft = district.email_draft
-  const draftLocked = draft && ['approved', 'rejected', 'sent'].includes(draft.status)
+  const draftLocked = !!draft && ['approved', 'rejected', 'sent'].includes(draft.status)
   const canSend = draft && ['approved', 'edited'].includes(draft.status)
 
   return (

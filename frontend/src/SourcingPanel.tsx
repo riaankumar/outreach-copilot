@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { apiUrl } from './api'
 
 type Person = {
   name?: string | null
@@ -76,7 +77,7 @@ export default function SourcingPanel({ open, onClose, onAdded }: Props) {
     if (!q.trim() || searching) return
     setSearching(true); setError(null); setResult(null); setAdded(null)
     try {
-      const res = await fetch('/api/sourcing/search', {
+      const res = await fetch(apiUrl('/api/sourcing/search'), {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ query: q.trim() }),
@@ -97,7 +98,7 @@ export default function SourcingPanel({ open, onClose, onAdded }: Props) {
     if (!result || adding) return
     setAdding(true); setError(null)
     try {
-      const res = await fetch('/api/sourcing/add', {
+      const res = await fetch(apiUrl('/api/sourcing/add'), {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ sourced: result }),

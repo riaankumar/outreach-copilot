@@ -6,6 +6,7 @@ import ImportPage from './ImportPage'
 import Sidebar, { type View } from './Sidebar'
 import SourcingPanel from './SourcingPanel'
 import UnmatchedPage from './UnmatchedPage'
+import { apiUrl } from './api'
 import type { District } from './types'
 import './App.css'
 
@@ -93,8 +94,8 @@ export default function App() {
     setLoading(true)
     try {
       const [dRes, uRes] = await Promise.all([
-        fetch('/api/districts').then((r) => r.json()),
-        fetch('/api/signals/unmatched').then((r) => r.json()).catch(() => []),
+        fetch(apiUrl('/api/districts')).then((r) => r.json()),
+        fetch(apiUrl('/api/signals/unmatched')).then((r) => r.json()).catch(() => []),
       ])
       setDistricts(dRes)
       setUnmatchedCount(Array.isArray(uRes) ? uRes.length : 0)
@@ -153,7 +154,7 @@ export default function App() {
     if (!nextPending) return
     setBriefing(true)
     try {
-      await fetch(`/api/districts/${nextPending.district_id}/run-pipeline`, { method: 'POST' })
+      await fetch(apiUrl(`/api/districts/${nextPending.district_id}/run-pipeline`), { method: 'POST' })
       await refresh()
       setOpenId(nextPending.district_id)
     } finally {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { apiUrl } from './api'
 
 type UnmatchedSignal = {
   signal_id: string
@@ -20,7 +21,7 @@ export default function UnmatchedPage({ onRefresh }: Props) {
   async function load() {
     setLoading(true)
     try {
-      const res = await fetch('/api/signals/unmatched')
+      const res = await fetch(apiUrl('/api/signals/unmatched'))
       setItems(await res.json())
     } finally {
       setLoading(false)
@@ -30,7 +31,7 @@ export default function UnmatchedPage({ onRefresh }: Props) {
   async function rerun() {
     setLoading(true)
     try {
-      await fetch('/api/signals/resolve', { method: 'POST' })
+      await fetch(apiUrl('/api/signals/resolve'), { method: 'POST' })
       await load()
       onRefresh?.()
     } finally {

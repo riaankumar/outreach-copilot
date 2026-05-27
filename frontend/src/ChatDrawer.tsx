@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { apiUrl } from './api'
 
 type UIMessage = {
   role: 'user' | 'assistant'
@@ -58,7 +59,7 @@ export default function ChatDrawer({ open, onClose, onActionTaken }: Props) {
     const nextApi: ApiMessage[] = [...apiMessages, { role: 'user', content: text }]
 
     try {
-      const res = await fetch('/api/chat', {
+      const res = await fetch(apiUrl('/api/chat'), {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ messages: nextApi }),

@@ -1,0 +1,15 @@
+.venv
+.git
+.gitignore
+.pytest_cache
+.gstack
+.python-version
+__pycache__
+*.pyc
+frontend
+tests
+evals
+scripts
+.env
+.env.example
+README.md
