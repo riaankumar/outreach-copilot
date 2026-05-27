@@ -1,7 +1,5 @@
 # District Outreach Copilot
 
-> Journify take-home — Riaan Kumar, May 2026.
-
 A small system that turns a weekly drop of target K-12 districts plus intent
 signals into a queue of researched, ranked, send-ready outreach emails. Every
 non-boilerplate claim cites the evidence behind it. The SDR stays in the loop
