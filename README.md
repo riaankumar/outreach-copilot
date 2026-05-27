@@ -294,6 +294,26 @@ a news mention (D017 Tucson Unified). Labels and per-district report live in
 `evals/labels.jsonl` and `evals/last_run_report.md` — both overridable; rerun
 the eval anytime with `uv run python -m evals.run_eval`.
 
+## Email-quality eval (labeled-pair, judge vs human)
+
+The fit-score eval scores a *number* the model emits. Emails are *text*, so
+the same labeled-pair pattern needs a judge in the loop. 10 drafts are
+hand-labeled on three dimensions (0-10): hook specificity, tone, and CTA
+clarity. The judge (Claude Sonnet 4.6) scores the same drafts on the same
+rubric. The script reports per-dimension Spearman/Pearson/MAE between judge
+and human — measuring whether the judge tracks human taste before being
+trusted to grade at scale.
+
+```bash
+uv run python -m evals.run_email_eval
+```
+
+Labels in `evals/email_labels.jsonl` (each entry has the draft inline so
+labeling doesn't require switching contexts). Report writes to
+`evals/last_email_run_report.md`. Pattern is identical to the fit-score
+eval; the smaller sample is deliberate — 10 reasoned labels beat 50 lazy
+ones for measuring judge calibration.
+
 ## MCP server (call the copilot from Claude Code, Codex, Cursor)
 
 The dashboard is also an MCP server. Any MCP-speaking coding tool can call
@@ -356,9 +376,6 @@ her existing AI workflow instead of context-switching to a separate UI.
 
 ## What I'd build next
 
-- **Email-quality eval** — same labeled-pair pattern but on email outputs.
-  Hand-grade 20 drafts on hook specificity, tone, CTA clarity. Fit-score
-  eval already shipped (see Accuracy eval above).
 - **Re-prompt on weak-signal over-scoring** — the eval surfaced a calibration
   miss (model over-scores districts with only LinkedIn engagement by ~20 points).
   Tightening the rubric in the system prompt should close that gap.
